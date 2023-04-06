@@ -2,6 +2,7 @@
 
 Instead of initializing your own repositroy you can just fork this one to you
 own github account.
+This repo is a substract of the [Microsoft archived repo](https://github.com/microsoft/MCW-Cloud-native-applications).
 
 ## Quickstart on day 1
 
@@ -16,7 +17,7 @@ Use these credentials to create your environment **now**, it will take some time
 
 ### Fork the prepared initial commit
 
-[Create a fork of this repository, by clicking here.](https://github.com/waeltken/Fabmedical/fork)
+[Create a fork of this repository, by clicking here.](https://github.com/slyovich/Fabmedical/fork)
 
 > Make sure you fork into your private account.
 
@@ -24,7 +25,7 @@ Use these credentials to create your environment **now**, it will take some time
 
 Log into the Azure Portal on the provided virtual machine. The crendentials are in the lab environemnt.
 
-![Cloud Shell Button](https://github.com/microsoft/MCW-Cloud-native-applications/raw/master/Hands-on%20lab/media/b4-image35.png)
+![Cloud Shell Button](https://github.com/microsoft/MCW-Cloud-native-applications/blob/main/Hands-on%20lab/media/b4-image35.png)
 
 If you get an error message use the advanced options, select `westeurope` as region and unique names for the storage account and file storage.
 
