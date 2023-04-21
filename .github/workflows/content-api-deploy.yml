@@ -1,0 +1,39 @@
+name: content-api
+
+# This workflow is triggered on push to the 'content-web' directory of the  master branch of the repository
+on:
+  # Configure workflow to also support triggering manually
+  workflow_dispatch:
+    inputs:
+        tag:
+            description: 'Content API image tag value'
+            required: true
+        environment:
+            description: 'Target environment name'
+            required: true
+            default: 'PoC'
+
+# Environment variables are defined so that they can be used throughout the job definitions.
+env:
+  imageRepository: 'content/api'
+
+# Jobs define the actions that take place when code is pushed to the master branch
+jobs:
+
+  deploy-docker-image:
+    name: Deploy Docker Image
+    runs-on: ubuntu-latest
+
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    - name: AZ Login
+      run: |
+        az login --service-principal -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+
+    - name: AZ WebApp Set
+      run: |
+        az webapp config container set \
+            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --name ${{ vars.WEB_API_NAME }} \
+            --docker-custom-image-name ${{ env.imageRepository }}:${{ github.event.inputs.tag }}
