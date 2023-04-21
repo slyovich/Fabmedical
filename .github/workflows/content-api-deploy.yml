@@ -9,9 +9,11 @@ on:
             description: 'Content API image tag value'
             required: true
         environment:
+            type: choice
             description: 'Target environment name'
             required: true
-            default: 'PoC'
+            options: 
+            - PoC
 
 # Environment variables are defined so that they can be used throughout the job definitions.
 env:
@@ -29,7 +31,7 @@ jobs:
     steps:
     - name: AZ Login
       run: |
-        az login --service-principal -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+        az login --tenant ${{ vars.TENANT_ID }} --service-principal -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
 
     - name: AZ WebApp Set
       run: |
