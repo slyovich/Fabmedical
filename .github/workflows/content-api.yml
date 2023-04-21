@@ -38,7 +38,7 @@ jobs:
     - name: Build image
       run: |
         docker build \
-          --build-arg BUILD_VERSION=${{ env.tag }}
+          --build-arg BUILD_VERSION=${{ env.tag }} \
           -t ${{ vars.CONTAINERREGISTRY }}/${{ env.imageRepository }}:${{ env.tag }} \
           .
 
