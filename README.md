@@ -8,7 +8,9 @@ This repo is a substract of the [Microsoft archived repo](https://github.com/mic
 
 # Solution architecture
 
-Below is a diagram of the solution architecture you will build in this lab.
+Below is a diagram of the solution architecture you will build in this lab. It consists of a web application working with a backend API and relying on data stored in a Mongo DB. This application is made publicly available without any user authentication requirements.
+
+![Solution architecture](./img/diagrams-Solution%20overview.png)
 
 # Run locally
 
@@ -85,6 +87,16 @@ Our docker images are made available to our Azure services through an Azure Cont
       docker build -t <acrName>.azurecr.io/content/web:<tag> .
       docker push <acrName>.azurecr.io/content/web:<tag>
 
-## Stage 1
+## Phase 1 - PoC
 
-The following schema illustrates the architecture of this stage. This shows a very basic Azure setup enabling us to quickly run our application on Azure.
+First of all, we start working on a proof of concept enabling us to validate our system in an Azure environment. During this phase, we will build and publish our docker images manually to the Azure Container Registry. Then, these images are deployed into Azure App Services.
+
+The following schema illustrates the architecture we've built for this phase.
+
+![Azure PoC architecture](./img/diagrams-Azure%20architecture%20-%20PoC.png)
+
+## Phase 2 - Code deployment automation
+
+As our PoC was successful, the next step is to automatise our code deployment to remove manual activities and to prepare our environment to code changes and fast release.
+
+![](./img/diagrams-Azure%20architecture%20-%20Code%20deployment%20automation.png)
