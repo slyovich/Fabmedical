@@ -32,6 +32,7 @@ jobs:
     - name: AZ Login
       run: |
         az login --tenant ${{ vars.TENANT_ID }} --service-principal -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
+        az account set --subscription ${{ vars.SUBSCRIPTION_ID }}
 
     - name: AZ WebApp Set
       run: |
