@@ -39,4 +39,4 @@ jobs:
         az webapp config container set \
             --resource-group ${{ vars.RESOURCE_GROUP }} \
             --name ${{ vars.WEB_API_NAME }} \
-            --docker-custom-image-name ${{ env.imageRepository }}:${{ github.event.inputs.tag }}
+            --docker-custom-image-name ${{ vars.CONTAINERREGISTRY }}/${{ env.imageRepository }}:${{ github.event.inputs.tag }}
