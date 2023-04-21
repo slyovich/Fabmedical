@@ -68,7 +68,8 @@ app.get('/api/stats', function (req, res) {
   });
 });
 app.get('/api/version', function (req, res) {
-  res.status(200).send(JSON.stringify({version: process.env.BUILD_VERSION || '1.0.0'}));
+  //res.status(200).send(JSON.stringify({version: process.env.BUILD_VERSION || '1.0.0'}));
+  res.json({version: process.env.BUILD_VERSION || '1.0.0'});
 });
 
 

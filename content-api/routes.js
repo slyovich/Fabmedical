@@ -7,7 +7,8 @@ const init = function (app) {
     app.get("/speakers", appController.speakersGet);
     app.get("/stats", appController.statsGet);
     app.get("/version", function(req, res) {
-        res.status(200).send(JSON.stringify({version: process.env.BUILD_VERSION || '1.0.0'}));
+        //res.status(200).send(JSON.stringify({version: process.env.BUILD_VERSION || '1.0.0'}));
+        res.json({version: process.env.BUILD_VERSION || '1.0.0'});
     });
     app.get("/", function (req, res) {
         res.status(200).send("");
