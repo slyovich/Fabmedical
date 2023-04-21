@@ -18,6 +18,7 @@ on:
 # Environment variables are defined so that they can be used throughout the job definitions.
 env:
   imageRepository: 'content/web'
+  healthCheckUrl: 'https://${{ vars.WEB_API_NAME }}.azurewebsites.net/api/version'
 
 # Jobs define the actions that take place when code is pushed to the master branch
 jobs:
@@ -40,3 +41,24 @@ jobs:
             --resource-group ${{ vars.RESOURCE_GROUP }} \
             --name ${{ vars.WEB_APP_NAME }} \
             --docker-custom-image-name ${{ vars.CONTAINERREGISTRY }}/${{ env.imageRepository }}:${{ github.event.inputs.tag }}
+
+    - name: Check deployment
+      if: success()
+      id: 'checkDeployment'
+      continue-on-error: true
+      run: |
+        url=${{ env.healthCheckUrl }}
+        for i in $(seq 1 10)  
+        do 
+          result=$(curl -s $url | jq .version)
+          result=$(echo $result | tr -d '"')
+          
+          if [[ "$result" = "${{ github.event.inputs.tag }}" ]]; then
+            echo "Correct build number: $result."
+            exit 0  
+          fi
+          sleep 10
+        done
+        echo "Wrong build number ($result)."
+        # It failed a lot of time
+        exit 1
