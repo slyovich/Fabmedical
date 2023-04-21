@@ -14,6 +14,9 @@ RUN npm install
 COPY . /usr/src/app
 
 FROM base AS final
+
+ARG BUILD_VERSION
+
 WORKDIR /usr/src/app
 COPY --from=build /usr/src/app .
 CMD [ "npm", "start" ]

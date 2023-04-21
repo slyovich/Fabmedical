@@ -37,7 +37,10 @@ jobs:
     
     - name: Build image
       run: |
-        docker build -t ${{ vars.CONTAINERREGISTRY }}/${{ env.imageRepository }}:${{ env.tag }} .
+        docker build \
+          --build-arg BUILD_VERSION=${{ env.tag }}
+          -t ${{ vars.CONTAINERREGISTRY }}/${{ env.imageRepository }}:${{ env.tag }} \
+          .
 
     - name: Push container image
       run: |
