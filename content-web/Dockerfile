@@ -17,6 +17,10 @@ COPY . /usr/src/app
 RUN ng build 
 
 FROM base as final
+
+ARG BUILD_VERSION
+ENV BUILD_VERSION=${BUILD_VERSION}
+
 WORKDIR /usr/src/app
 COPY --from=build /usr/src/app .
 CMD [ "node", "app.js" ]

@@ -16,6 +16,7 @@ COPY . /usr/src/app
 FROM base AS final
 
 ARG BUILD_VERSION
+ENV BUILD_VERSION=${BUILD_VERSION}
 
 WORKDIR /usr/src/app
 COPY --from=build /usr/src/app .
