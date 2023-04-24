@@ -65,7 +65,7 @@ jobs:
         - name: 'Get Cosmos DB connection string'
           run: |
             PRIMARY_MASTER_KEY=$(az cosmosdb keys list --name ${{ vars.COSMOSDB_ACCOUNT_NAME }} --resource-group ${{ secrets.AZURE_RG }} --query primaryMasterKey --output tsv)
-            CONNECTION_STRING="mongodb://${{ vars.COSMOSDB_ACCOUNT_NAME }}:$(PRIMARY_MASTER_KEY)@${{ vars.COSMOSDB_ACCOUNT_NAME }}.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
+            CONNECTION_STRING="mongodb://${{ vars.COSMOSDB_ACCOUNT_NAME }}:$PRIMARY_MASTER_KEY@${{ vars.COSMOSDB_ACCOUNT_NAME }}.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
             echo "COSMOSDB_CONNECTION_STRING=$CONNECTION_STRING" >> ${GITHUB_ENV}
 
         - name: 'Build content-init image'
