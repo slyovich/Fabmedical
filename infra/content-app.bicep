@@ -1,10 +1,17 @@
 param environment string = 'demo'
 param location string = 'Switzerland North'
 param locationacr string = 'nch'
-param acrname string
-param webappImageAndTag string = 'nginx'
-param webapiImageAndTag string = 'nginx'
+
+param cosmosDbAccountName string
 param enableFreeTierForCosmos bool
+
+param acrname string
+
+param webAppName string
+param webappImageAndTag string = 'nginx'
+
+param webApiName string
+param webapiImageAndTag string = 'nginx'
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10-01' = {
   name: 'logs-brownbag-${environment}-${locationacr}-01'
@@ -16,6 +23,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10
     retentionInDays: 30
   }
 }
+
 resource appInsightsComponents 'Microsoft.Insights/components@2020-02-02' = {
   name: 'insights-brownbag-${environment}-${locationacr}-01'
   location: location
@@ -27,7 +35,7 @@ resource appInsightsComponents 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-03-15' = {
-  name: 'cosmos-brownbag-${environment}-${locationacr}-01'
+  name: cosmosDbAccountName
   location: location
   kind: 'MongoDB'
   properties: {
@@ -137,7 +145,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
 }
 
 resource webApplication 'Microsoft.Web/sites@2021-01-15' = {
-  name: 'app-brownbag-${environment}-${locationacr}-01'
+  name: webAppName
   location: location
   kind: 'app,linux,container'
   tags: {
@@ -187,11 +195,11 @@ resource webApplication 'Microsoft.Web/sites@2021-01-15' = {
 }
 
 resource webApi 'Microsoft.Web/sites@2021-01-15' = {
-  name: 'app-brownbag-${environment}-${locationacr}-02'
+  name: webApiName
   location: location
   kind: 'app,linux,container'
   tags: {
-    name: 'content-web'
+    name: 'content-api'
   }
   properties: {
     serverFarmId: appServicePlan.id

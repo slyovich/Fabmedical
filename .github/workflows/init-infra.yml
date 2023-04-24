@@ -1,0 +1,77 @@
+name: init-infra
+
+# This workflow is triggered on push to the 'content-web' directory of the  master branch of the repository
+on:
+  # Configure workflow to also support triggering manually
+  workflow_dispatch:
+    inputs:
+        environment:
+            type: choice
+            description: 'Target environment name'
+            required: true
+            options: 
+            - PoC
+
+jobs:
+
+    deploy-infra:
+        name: Deploy infrastructure
+        runs-on: ubuntu-latest
+
+        environment: ${{ github.event.inputs.environment }}
+
+        steps:
+        # Checkout code
+        - uses: actions/checkout@master
+
+        # Log into Azure
+        - name: "Login via Azure CLI"
+          uses: azure/login@v1
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+        # Deploy Bicep file
+        - name: deploy
+          uses: azure/arm-deploy@v1
+          with:
+            subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
+            resourceGroupName: ${{ secrets.AZURE_RG }}
+            template: ./infra/content-app.bicep
+            parameters: 'environment=${{ vars.ENVIRONMENT }} acrname=${{ vars.CONTAINERREGISTRY }} webAppName=${{ vars.WEB_APP_NAME }} webApiName=${{ vars.WEB_API_NAME }} cosmosDbAccountName=${{ vars.COSMOSDB_ACCOUNT_NAME }} enableFreeTierForCosmos=false'
+            failOnStdErr: false
+            scope: resourcegroup
+
+    init-database:
+        name: Init Mongo Database
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+              working-directory: './content-init'
+
+        environment: ${{ github.event.inputs.environment }}
+
+        steps:
+        # Checkout code
+        - uses: actions/checkout@master
+
+        # Log into Azure
+        - name: "Login via Azure CLI"
+          uses: azure/login@v1
+          with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+        - name: 'Get Cosmos DB connection string'
+          run: |
+            PRIMARY_MASTER_KEY=$(az cosmosdb keys list --name ${{ vars.COSMOSDB_ACCOUNT_NAME }} --resource-group ${{ secrets.AZURE_RG }} --query primaryMasterKey --output tsv)
+            echo "COSMOSDB_PRIMARY_MASTER_KEY=$PRIMARY_MASTER_KEY" >> ${GITHUB_ENV}
+
+        - name: 'Build content-init image'
+          run: |
+            docker build -t content-init:latest .
+        
+        - name: 'Run content-init image'
+          run: |
+            COSMOSDB_CONNECTION_STRING=mongodb://${{ vars.COSMOSDB_ACCOUNT_NAME }}:${{ env.COSMOSDB_PRIMARY_MASTER_KEY }}@${{ vars.COSMOSDB_ACCOUNT_NAME }}.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false
+            docker run -e MONGODB_CONNECTION=$COSMOSDB_CONNECTION_STRING content-init:latest
+            

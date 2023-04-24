@@ -30,17 +30,17 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     
     steps:
-    - name: AZ Login
-      run: |
-        az login --tenant ${{ vars.TENANT_ID }} --service-principal -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
-        az account set --subscription ${{ vars.SUBSCRIPTION_ID }}
+    - name: "Login via Azure CLI"
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: AZ WebApp Set
       run: |
         az webapp config container set \
-            --resource-group ${{ vars.RESOURCE_GROUP }} \
+            --resource-group ${{ secrets.AZURE_RG }} \
             --name ${{ vars.WEB_APP_NAME }} \
-            --docker-custom-image-name ${{ vars.CONTAINERREGISTRY }}/${{ env.imageRepository }}:${{ github.event.inputs.tag }}
+            --docker-custom-image-name ${{ vars.CONTAINERREGISTRY }}.azurecr.io/${{ env.imageRepository }}:${{ github.event.inputs.tag }}
 
     - name: Check deployment
       if: success()
