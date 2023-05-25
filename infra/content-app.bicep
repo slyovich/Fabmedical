@@ -6,6 +6,7 @@ param cosmosDbAccountName string
 param enableFreeTierForCosmos bool
 
 param acrname string
+param acrResourceGroupName string = 'ARG-BROWNBAG-DEMO-NCH-01'
 
 param webAppPlanScaling int = 1
 
@@ -247,8 +248,8 @@ resource webApi 'Microsoft.Web/sites@2021-01-15' = {
 }
 
 resource acrPullRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: resourceGroup()
-  name: '	7f951dda-4ed3-4680-a7ca-43fe172d538d'
+  scope: subscription()
+  name: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 }
 
 resource appUserIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
