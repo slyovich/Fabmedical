@@ -6,7 +6,6 @@ param cosmosDbAccountName string
 param enableFreeTierForCosmos bool
 
 param acrname string
-param acrResourceGroupName string = 'ARG-BROWNBAG-DEMO-NCH-01'
 
 param webAppPlanScaling int = 1
 
