@@ -15,7 +15,7 @@ on:
             - test
           
 env:
-  resourceGroupName: 'ARG-BROWNBAG-${{ github.event.inputs.environment.uppercase }}-NCH-01'
+  resourceGroupName: 'ARG-BROWNBAG-${{ github.event.inputs.environment }}-NCH-01'
 
 jobs:
 

@@ -19,7 +19,7 @@ on:
 
 # Environment variables are defined so that they can be used throughout the job definitions.
 env:
-  resourceGroupName: 'ARG-BROWNBAG-${{ github.event.inputs.environment.uppercase }}-NCH-01'
+  resourceGroupName: 'ARG-BROWNBAG-${{ github.event.inputs.environment }}-NCH-01'
   imageRepository: 'content/web'
   healthCheckUrl: 'https://${{ vars.WEB_API_NAME }}.azurewebsites.net/api/version'
 
