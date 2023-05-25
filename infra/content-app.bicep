@@ -257,7 +257,7 @@ resource appUserIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
 }
 
 resource webAppRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
-  name: guid(resourceGroup().id, acrname, 'AcrPullAppUserAssigned')
+  name: guid(subscription().id, acrname, 'AcrPullAppUserAssigned')
   properties: {
     roleDefinitionId: acrPullRoleDefinition.id
     principalId: appUserIdentity.properties.principalId
