@@ -33,6 +33,18 @@ jobs:
           with:
             creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+        # Show deployment changes
+        - name: what-if
+          uses: azure/arm-deploy@v1
+          with:
+            subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
+            resourceGroupName: ${{ secrets.AZURE_RG }}
+            template: ./infra/content-app.bicep
+            parameters: 'environment=${{ vars.ENVIRONMENT }} acrname=${{ vars.CONTAINERREGISTRY }} webAppPlanScaling=${{ vars.WEBAPPPLAN_SCALING }} webAppName=${{ vars.WEB_APP_NAME }} webApiName=${{ vars.WEB_API_NAME }} cosmosDbAccountName=${{ vars.COSMOSDB_ACCOUNT_NAME }} enableFreeTierForCosmos=false'
+            additionalArguments: "--what-if"
+            failOnStdErr: false
+            scope: resourcegroup
+
         # Deploy Bicep file
         - name: deploy
           uses: azure/arm-deploy@v1
