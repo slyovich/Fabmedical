@@ -11,6 +11,9 @@ on:
             required: true
             options: 
             - PoC
+            - dev
+            - test
+          
 
 jobs:
 
@@ -37,7 +40,7 @@ jobs:
             subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
             resourceGroupName: ${{ secrets.AZURE_RG }}
             template: ./infra/content-app.bicep
-            parameters: 'environment=${{ vars.ENVIRONMENT }} acrname=${{ vars.CONTAINERREGISTRY }} webAppName=${{ vars.WEB_APP_NAME }} webApiName=${{ vars.WEB_API_NAME }} cosmosDbAccountName=${{ vars.COSMOSDB_ACCOUNT_NAME }} enableFreeTierForCosmos=false'
+            parameters: 'environment=${{ vars.ENVIRONMENT }} acrname=${{ vars.CONTAINERREGISTRY }} webAppPlanScaling=${{ vars.WEBAPPPLAN_SCALING }} webAppName=${{ vars.WEB_APP_NAME }} webApiName=${{ vars.WEB_API_NAME }} cosmosDbAccountName=${{ vars.COSMOSDB_ACCOUNT_NAME }} enableFreeTierForCosmos=false'
             failOnStdErr: false
             scope: resourcegroup
 

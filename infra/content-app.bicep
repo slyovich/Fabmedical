@@ -7,6 +7,8 @@ param enableFreeTierForCosmos bool
 
 param acrname string
 
+param webAppPlanScaling int = 1
+
 param webAppName string
 param webappImageAndTag string = 'nginx'
 
@@ -136,7 +138,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-12-01' = {
   location: location
   sku: {
     name: 'B1'
-    capacity: 1
+    capacity: webAppPlanScaling
   }
   kind: 'linux'
   properties: {
