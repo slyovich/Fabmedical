@@ -14,6 +14,8 @@ on:
             - dev
             - test
           
+env:
+  resourceGroupName: 'ARG-BROWNBAG-${{ github.event.inputs.environment.uppercase }}-NCH-01'
 
 jobs:
 
@@ -33,12 +35,19 @@ jobs:
           with:
             creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+        - uses: Azure/CLI@v1
+          with:
+            inlineScript: |
+              #!/bin/bash
+              az group create --name ${{ env.resourceGroupName }} --location SwitzerlandNorth
+              echo "Azure resource group created"
+
         # Show deployment changes
         - name: what-if
           uses: azure/arm-deploy@v1
           with:
             subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
-            resourceGroupName: ${{ secrets.AZURE_RG }}
+            resourceGroupName: ${{ env.resourceGroupName }}
             template: ./infra/content-app.bicep
             parameters: 'environment=${{ vars.ENVIRONMENT }} acrname=${{ vars.CONTAINERREGISTRY }} webAppPlanScaling=${{ vars.WEBAPPPLAN_SCALING }} webAppName=${{ vars.WEB_APP_NAME }} webApiName=${{ vars.WEB_API_NAME }} cosmosDbAccountName=${{ vars.COSMOSDB_ACCOUNT_NAME }} enableFreeTierForCosmos=false'
             additionalArguments: "--what-if"
@@ -50,7 +59,7 @@ jobs:
           uses: azure/arm-deploy@v1
           with:
             subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION }}
-            resourceGroupName: ${{ secrets.AZURE_RG }}
+            resourceGroupName: ${{ env.resourceGroupName }}
             template: ./infra/content-app.bicep
             parameters: 'environment=${{ vars.ENVIRONMENT }} acrname=${{ vars.CONTAINERREGISTRY }} webAppPlanScaling=${{ vars.WEBAPPPLAN_SCALING }} webAppName=${{ vars.WEB_APP_NAME }} webApiName=${{ vars.WEB_API_NAME }} cosmosDbAccountName=${{ vars.COSMOSDB_ACCOUNT_NAME }} enableFreeTierForCosmos=false'
             failOnStdErr: false
@@ -79,7 +88,7 @@ jobs:
 
         - name: 'Get Cosmos DB connection string'
           run: |
-            PRIMARY_MASTER_KEY=$(az cosmosdb keys list --name ${{ vars.COSMOSDB_ACCOUNT_NAME }} --resource-group ${{ secrets.AZURE_RG }} --query primaryMasterKey --output tsv)
+            PRIMARY_MASTER_KEY=$(az cosmosdb keys list --name ${{ vars.COSMOSDB_ACCOUNT_NAME }} --resource-group ${{ env.resourceGroupName }} --query primaryMasterKey --output tsv)
             CONNECTION_STRING="mongodb://${{ vars.COSMOSDB_ACCOUNT_NAME }}:$PRIMARY_MASTER_KEY@${{ vars.COSMOSDB_ACCOUNT_NAME }}.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
             echo "COSMOSDB_CONNECTION_STRING=$CONNECTION_STRING" >> ${GITHUB_ENV}
 
