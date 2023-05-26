@@ -13,6 +13,7 @@ on:
             description: 'Target environment name'
             required: true
             options: 
+            - DEMO
             - PoC
             - dev
             - test
