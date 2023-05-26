@@ -48,7 +48,7 @@ jobs:
     - name: Check deployment
       if: success()
       id: 'checkDeployment'
-      continue-on-error: true
+      continue-on-error: false
       run: |
         url=${{ env.healthCheckUrl }}
         for i in $(seq 1 10)  
