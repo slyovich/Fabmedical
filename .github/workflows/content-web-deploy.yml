@@ -22,7 +22,7 @@ on:
 env:
   resourceGroupName: 'ARG-BROWNBAG-${{ github.event.inputs.environment }}-NCH-01'
   imageRepository: 'content/web'
-  healthCheckUrl: 'https://${{ vars.WEB_API_NAME }}.azurewebsites.net/api/version'
+  healthCheckUrl: 'https://${{ vars.WEB_APP_NAME }}.azurewebsites.net/api/version'
 
 # Jobs define the actions that take place when code is pushed to the master branch
 jobs:
