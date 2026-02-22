@@ -23,8 +23,11 @@ First of all, initialize your database by executing the following commands:
       #Navigate to your content-init directory
       cd ./content-init
 
-      sudo npm ci
-      nodejs server.js
+      # Make sure you have node version 16 installed
+      nvm use 16
+
+      npm ci
+      npm start
 
 ## Backend API
 
