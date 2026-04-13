@@ -1,0 +1,54 @@
+{
+  "name": "Fabmedical Dev",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dev",
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspaces/Fabmedical",
+  "remoteEnv": {
+    "MONGODB_CONNECTION": "mongodb://mongo:27017/contentdb",
+    "CONTENT_API_URL": "http://localhost:3001"
+  },
+  "runServices": ["mongo"],
+  "shutdownAction": "stopCompose",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [3000, 3001, 4200, 8080, 27017],
+  "portsAttributes": {
+    "3000": {
+      "label": "content-web"
+    },
+    "3001": {
+      "label": "content-api"
+    },
+    "4200": {
+      "label": "Angular dev server"
+    },
+    "8080": {
+      "label": "content-gateway"
+    },
+    "27017": {
+      "label": "MongoDB"
+    }
+  },
+  "postCreateCommand": "bash -lc 'npm --prefix content-api install && npm --prefix content-init install && npm --prefix content-web install'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Angular.ng-template",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "ms-azuretools.vscode-bicep",
+        "ms-vscode.azurecli",
+        "mongodb.mongodb-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true,
+        "files.eol": "\n"
+      }
+    }
+  }
+}

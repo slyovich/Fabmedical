@@ -1,0 +1,217 @@
+static_resources:
+  # Secrets for OAuth2 session management
+  secrets:
+    - name: token
+      generic_secret:
+        secret:
+          # Reads from CLIENT_SECRET environment variable at startup
+          environment_variable: "CLIENT_SECRET"
+    - name: hmac
+      generic_secret:
+        secret:
+          # Reads from HMAC_SECRET environment variable at startup
+          environment_variable: "HMAC_SECRET"
+
+  listeners:
+    - name: listener_0
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 8080
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+                codec_type: AUTO
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: backend
+                      domains:
+                        - "*"
+                      routes:
+                        # Route /api/* to content-api on port 3001, stripping the /api prefix
+                        - match:
+                            prefix: "/api/"
+                          route:
+                            cluster: content_api
+                            prefix_rewrite: "/"
+                        # Route everything else to content-web on port 3000
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: content_web
+                http_filters:
+                  # 1. OAuth2 - Handles Entra ID login flow and session management
+                  #    Redirects unauthenticated users to Entra ID login page
+                  - name: envoy.filters.http.oauth2
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.oauth2.v3.OAuth2
+                      config:
+                        token_endpoint:
+                          cluster: entra_id
+                          uri: https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/token
+                          timeout: 5s
+                        authorization_endpoint: https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize
+                        redirect_uri: "%REQ(:scheme)%://%REQ(:authority)%/callback"
+                        redirect_path_matcher:
+                          path:
+                            exact: /callback
+                        signout_path:
+                          path:
+                            exact: /signout
+                        forward_bearer_token: true
+                        credentials:
+                          client_id: "${CLIENT_ID}"
+                          token_secret:
+                            name: token
+                          hmac_secret:
+                            name: hmac
+                        auth_scopes:
+                          - openid
+                          - profile
+                          - email
+                          - api://${CLIENT_ID}/user_impersonation
+
+                  # 2. JWT Authentication - Validates the access token and extracts claims
+                  #    Makes JWT payload available in metadata for RBAC
+                  - name: envoy.filters.http.jwt_authn
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
+                      providers:
+                        entra_id:
+                          issuer: "https://login.microsoftonline.com/${TENANT_ID}/v2.0"
+                          audiences:
+                            - "${CLIENT_ID}"
+                          remote_jwks:
+                            http_uri:
+                              uri: "https://login.microsoftonline.com/${TENANT_ID}/discovery/v2.0/keys"
+                              cluster: entra_id
+                              timeout: 5s
+                            cache_duration:
+                              seconds: 600
+                          forward: true
+                          from_cookies:
+                            - "BearerToken"
+                          payload_in_metadata: "jwt_payload"
+                      rules:
+                        # Require JWT validation on /api/ routes (for RBAC claims)
+                        - match:
+                            prefix: "/api/"
+                          requires:
+                            provider_name: "entra_id"
+                        # No JWT validation needed on other routes (OAuth2 handles auth)
+                        - match:
+                            prefix: "/"
+
+                  # 3. RBAC - Role-based access control using JWT roles claim
+                  - name: envoy.filters.http.rbac
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC
+                      rules:
+                        action: ALLOW
+                        policies:
+                          # Allow "user" role to access /api/sessions and /api/speakers
+                          "user_endpoints":
+                            permissions:
+                              - or_rules:
+                                  rules:
+                                    - url_path:
+                                        path:
+                                          prefix: "/api/sessions"
+                                    - url_path:
+                                        path:
+                                          prefix: "/api/speakers"
+                            principals:
+                              - metadata:
+                                  filter: envoy.filters.http.jwt_authn
+                                  path:
+                                    - key: jwt_payload
+                                    - key: roles
+                                  value:
+                                    list_match:
+                                      one_of:
+                                        string_match:
+                                          exact: "user"
+                          # Allow "admin" role to access /api/stats
+                          "admin_endpoints":
+                            permissions:
+                              - url_path:
+                                  path:
+                                    prefix: "/api/stats"
+                            principals:
+                              - metadata:
+                                  filter: envoy.filters.http.jwt_authn
+                                  path:
+                                    - key: jwt_payload
+                                    - key: roles
+                                  value:
+                                    list_match:
+                                      one_of:
+                                        string_match:
+                                          exact: "admin"
+                          # Allow any authenticated user to access non-API routes (content-web)
+                          "authenticated_web_access":
+                            permissions:
+                              - not_rule:
+                                  url_path:
+                                    path:
+                                      prefix: "/api/"
+                            principals:
+                              - any: true
+
+                  # 4. Router
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+  clusters:
+    - name: content_api
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: content_api
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: host.docker.internal
+                      port_value: 3001
+
+    - name: content_web
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: content_web
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: host.docker.internal
+                      port_value: 3000
+
+    # Cluster for Entra ID endpoints (JWKS + OAuth2 token exchange)
+    - name: entra_id
+      connect_timeout: 5s
+      type: LOGICAL_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: entra_id
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: login.microsoftonline.com
+                      port_value: 443
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          sni: login.microsoftonline.com
