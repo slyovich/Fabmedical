@@ -42,7 +42,7 @@ This repository now contains a ready-to-use Dev Container setup under `.devconta
 - Backend API: `npm --prefix content-api start`
 - Data initialization: `node content-init/server.js`
 - Frontend build (Angular): `npm --prefix content-web run build`
-- Frontend server (Node/Express): `CONTENT_API_URL=http://localhost:3001 node content-web/app.js`
+- Frontend server (Node/Express): `node content-web/app.js`
 - Gateway (Envoy image build): `docker build -t content-gateway:1.0.0 ./content-gateway`
 
 ### Run web app with Node (recommended for `/api/*` routes)
@@ -69,12 +69,11 @@ If you want to keep the Node startup (instead of `ng serve`), use these steps.
 
 Notes:
 
-- In this mode, `/api/*` is handled by `content-web/app.js` and proxied to `CONTENT_API_URL`.
 - For automatic front-end rebuilds while coding, run this in another terminal:
 
       npm --prefix content-web run build -- --watch
 
-## Develop with local Node and MongoDB as Docker containers
+## Develop with Docker containers
 
 ### Database
 
@@ -121,15 +120,15 @@ And use the value returned in `IPAddress` to run your backend container
 
 Azure Cosmos for Mongo DB enables us to use Mongo DB database as a service. In order to initialize the database,
 
-1.  Create an Azure Cosmos for Mongo DB
-2.  Create the database named `contentdb`
-3.  Execute the following commands (example with Powershell Core):
+1. Create an Azure Cosmos for Mongo DB
+2. Create the database named `contentdb`
+3. Execute the following commands (example with Powershell Core):
 
             cd ./content-init
             $env:MONGODB_CONNECTION="mongodb://<ACCOUNT-NAME>:<PRIMARY-KEY>@<ACCOUNT-NAME>.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
             npm start
 
-4.  When initialized, update the indexing policy of the automatically created `sessions` collection including the index on the field `startTime`, as illustrated in the image below. This property is used to sort sessions documents when fetched through the backend API.
+4. When initialized, update the indexing policy of the automatically created `sessions` collection including the index on the field `startTime`, as illustrated in the image below. This property is used to sort sessions documents when fetched through the backend API.
     ![Indexing policy](./img/sessions-indexing-policy.png)
 
 ## Container registry
@@ -164,4 +163,4 @@ The following schema illustrates the architecture we've built for this phase.
 
 As our PoC was successful, the next step is to automatise our code deployment to remove manual activities and to prepare our environment to code changes and fast release.
 
-![](./img/diagrams-Azure%20architecture%20-%20Code%20deployment%20automation.png)
+![Automation](./img/diagrams-Azure%20architecture%20-%20Code%20deployment%20automation.png)
