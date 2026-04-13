@@ -8,7 +8,7 @@ API Gateway basé sur [Envoy Proxy](https://www.envoyproxy.io/) qui centralise l
                     ┌──────────────────────┐
                     │   Envoy Proxy (:8080)│
                     │                      │
-Utilisateur ──────►│  OAuth2 (Entra ID)   │
+Utilisateur ──────► │  OAuth2 (Entra ID)   │
                     │  JWT Authentication  │
                     │  RBAC Authorization  │
                     │                      │
@@ -19,29 +19,29 @@ Utilisateur ──────►│  OAuth2 (Entra ID)   │
 
 ### Chaîne de filtres HTTP
 
-| # | Filtre | Rôle |
-|---|--------|------|
-| 1 | **OAuth2** | Gère le flow OIDC avec Entra ID. Redirige les utilisateurs non authentifiés vers la page de login |
-| 2 | **JWT Authn** | Valide le JWT access token et extrait les claims dans les metadata |
-| 3 | **RBAC** | Autorise l'accès aux endpoints `/api/` selon le claim `roles` du JWT |
-| 4 | **Router** | Route vers le backend approprié |
+| #   | Filtre        | Rôle                                                                                              |
+| --- | ------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | **OAuth2**    | Gère le flow OIDC avec Entra ID. Redirige les utilisateurs non authentifiés vers la page de login |
+| 2   | **JWT Authn** | Valide le JWT access token et extrait les claims dans les metadata                                |
+| 3   | **RBAC**      | Autorise l'accès aux endpoints `/api/` selon le claim `roles` du JWT                              |
+| 4   | **Router**    | Route vers le backend approprié                                                                   |
 
 ### Routage
 
-| Requête entrante | Backend | Path rewrite |
-|------------------|---------|--------------|
-| `/api/speakers` | `content-api:3001` | `/speakers` |
-| `/api/sessions` | `content-api:3001` | `/sessions` |
-| `/api/stats` | `content-api:3001` | `/stats` |
-| `/*` | `content-web:3000` | *(inchangé)* |
+| Requête entrante | Backend            | Path rewrite |
+| ---------------- | ------------------ | ------------ |
+| `/api/speakers`  | `content-api:3001` | `/speakers`  |
+| `/api/sessions`  | `content-api:3001` | `/sessions`  |
+| `/api/stats`     | `content-api:3001` | `/stats`     |
+| `/*`             | `content-web:3000` | _(inchangé)_ |
 
 ### Autorisations (RBAC)
 
-| Endpoint | Rôle requis |
-|----------|-------------|
-| `/api/sessions` | `user` |
-| `/api/speakers` | `user` |
-| `/api/stats` | `admin` |
+| Endpoint           | Rôle requis             |
+| ------------------ | ----------------------- |
+| `/api/sessions`    | `user`                  |
+| `/api/speakers`    | `user`                  |
+| `/api/stats`       | `admin`                 |
 | `/*` (content-web) | Authentifié (tout rôle) |
 
 ---
@@ -74,10 +74,10 @@ Avant toute utilisation, configurez une App Registration dans Entra ID :
 
 - **App roles** → Créer deux rôles :
 
-| Display name | Value | Allowed member types |
-|---|---|---|
-| User | `user` | Users/Groups |
-| Admin | `admin` | Users/Groups |
+| Display name | Value   | Allowed member types |
+| ------------ | ------- | -------------------- |
+| User         | `user`  | Users/Groups         |
+| Admin        | `admin` | Users/Groups         |
 
 ### 5. Assigner les utilisateurs
 
@@ -99,12 +99,12 @@ Avant toute utilisation, configurez une App Registration dans Entra ID :
 
 Le `TENANT_ID` et le `CLIENT_ID` sont substitués dans le fichier de configuration Envoy au démarrage du conteneur via `envsubst`. Le `CLIENT_SECRET` et le `HMAC_SECRET` sont lus nativement par Envoy via le type `DataSource`.
 
-| Variable | Description | Exemple |
-| --- | --- | --- |
-| `TENANT_ID` | Azure AD Tenant ID | `0b46db74-...` |
-| `CLIENT_ID` | Application (client) ID de l'App Registration | `b8423ca0-...` |
-| `CLIENT_SECRET` | Client secret de l'App Registration Entra ID | `Tft8Q~...` |
-| `HMAC_SECRET` | Secret aléatoire pour signer les cookies de session OAuth2 | *(générer avec `openssl rand -hex 32`)* |
+| Variable        | Description                                                | Exemple                                 |
+| --------------- | ---------------------------------------------------------- | --------------------------------------- |
+| `TENANT_ID`     | Azure AD Tenant ID                                         | `0b46db74-...`                          |
+| `CLIENT_ID`     | Application (client) ID de l'App Registration              | `b8423ca0-...`                          |
+| `CLIENT_SECRET` | Client secret de l'App Registration Entra ID               | `Tft8Q~...`                             |
+| `HMAC_SECRET`   | Secret aléatoire pour signer les cookies de session OAuth2 | _(générer avec `openssl rand -hex 32`)_ |
 
 ### Build de l'image
 
@@ -145,10 +145,10 @@ curl http://localhost:8080/api/stats
 
 ### Endpoints spéciaux
 
-| Path | Description |
-|---|---|
+| Path        | Description                                      |
+| ----------- | ------------------------------------------------ |
 | `/callback` | Callback OAuth2 (géré automatiquement par Envoy) |
-| `/signout` | Déconnexion — supprime la session et les cookies |
+| `/signout`  | Déconnexion — supprime la session et les cookies |
 
 ### Arrêter le conteneur
 
@@ -169,17 +169,17 @@ Internet
 ┌──────────────────────────────────────────────────────┐
 │          Azure Container Apps Environment            │
 │                                                      │
-│  ┌──────────────────┐                                │
+│  ┌───────────────────┐                               │
 │  │ content-gateway   │  Ingress externe (port 8080)  │
 │  │ (Envoy Proxy)     │                               │
 │  └──────┬───────┬────┘                               │
 │         │       │                                    │
 │    /api/│       │ /*                                 │
 │         ▼       ▼                                    │
-│  ┌────────────┐ ┌────────────┐                       │
+│  ┌─────────────┐ ┌─────────────┐                     │
 │  │ content-api │ │ content-web │  Ingress interne    │
 │  │ port 3001   │ │ port 3000   │                     │
-│  └────────────┘ └────────────┘                       │
+│  └─────────────┘ └─────────────┘                     │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -205,13 +205,13 @@ Pour Azure Container Apps, modifier les adresses des clusters dans `envoy.yaml` 
 clusters:
   - name: content_api
     # ...
-    address: content-api       # Nom de la Container App
-    port_value: 3001           # Port cible
+    address: content-api # Nom de la Container App
+    port_value: 3001 # Port cible
 
   - name: content_web
     # ...
-    address: content-web       # Nom de la Container App
-    port_value: 3000           # Port cible
+    address: content-web # Nom de la Container App
+    port_value: 3000 # Port cible
 ```
 
 > **Tip** : vous pouvez maintenir deux fichiers de configuration (`envoy.yaml` pour le local, `envoy-aca.yaml` pour Azure) ou utiliser un script de substitution.

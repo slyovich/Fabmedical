@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspaces/Fabmedical:cached
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:4.0
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:
