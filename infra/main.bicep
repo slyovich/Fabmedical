@@ -38,6 +38,9 @@ param webApiName string
 @description('Docker image and tag for content-api')
 param webapiImageAndTag string = 'nginx'
 
+@description('Name of the Key Vault')
+param keyVaultName string
+
 // ========================================
 // Modules
 // ========================================
@@ -87,6 +90,16 @@ module appServicePlan 'modules/app-service-plan.bicep' = {
   }
 }
 
+module keyVault 'modules/key-vault.bicep' = {
+  name: 'keyVaultDeployment'
+  params: {
+    keyVaultName: keyVaultName
+    location: location
+    identityPrincipalId: managedIdentity.outputs.identityPrincipalId
+    mongoDbConnectionString: 'mongodb://${cosmosdb.outputs.cosmosDbAccountName}:${cosmosdb.outputs.cosmosDbPrimaryKey}@${cosmosdb.outputs.cosmosDbAccountName}.mongo.cosmos.azure.com:10255/${cosmosdb.outputs.mongoDbName}?ssl=true&replicaSet=globaldb&retrywrites=false'
+  }
+}
+
 module webApi 'modules/web-api.bicep' = {
   name: 'webApiDeployment'
   params: {
@@ -99,9 +112,8 @@ module webApi 'modules/web-api.bicep' = {
     identityClientId: managedIdentity.outputs.identityClientId
     instrumentationKey: monitoring.outputs.instrumentationKey
     connectionString: monitoring.outputs.connectionString
-    cosmosDbAccountName: cosmosdb.outputs.cosmosDbAccountName
-    cosmosDbPrimaryKey: cosmosdb.outputs.cosmosDbPrimaryKey
-    mongoDbName: cosmosdb.outputs.mongoDbName
+    keyVaultName: keyVault.outputs.keyVaultName
+    keyVaultSecretName: keyVault.outputs.mongoDbSecretName
   }
 }
 
