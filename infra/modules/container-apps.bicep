@@ -128,17 +128,16 @@ resource apps 'Microsoft.App/containerApps@2026-01-01' = [
         containers: [
           {
             name: app.name
-            image: '${acrLoginServer}/${app.imageAndTag}'
+            image: app.imageAndTag
             resources: {
               cpu: any(app.cpu)
               memory: app.memory
             }
             env: [
-              for envItem in (app.?env ?? []): {
-                name: envItem.name
-                value: envItem.secretRef == null ? envItem.value : null
-                secretRef: envItem.secretRef != null ? envItem.secretRef : null
-              }
+              for envItem in (app.?env ?? []): union(
+                { name: envItem.name },
+                envItem.?secretRef != null ? { secretRef: envItem.secretRef } : { value: envItem.value }
+              )
             ]
           }
         ]

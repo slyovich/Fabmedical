@@ -198,7 +198,7 @@ module containerApps 'modules/container-apps.bicep' = {
         env: [
           {
             name: 'CONTENT_API_URL'
-            value: 'https://ca-content-api.internal.${containerAppEnvironment.outputs.defaultDomain}'
+            value: 'https://ca-content-api.${containerAppEnvironment.outputs.defaultDomain}'
           }
           {
             name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
