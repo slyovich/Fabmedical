@@ -137,7 +137,7 @@ resource apps 'Microsoft.App/containerApps@2026-01-01' = [
               for envItem in (app.?env ?? []): {
                 name: envItem.name
                 value: envItem.secretRef == null ? envItem.value : null
-                secretRef: envItem.secretRef
+                secretRef: envItem.secretRef != null ? envItem.secretRef : null
               }
             ]
           }

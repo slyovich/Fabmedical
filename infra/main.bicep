@@ -2,14 +2,8 @@
 // Parameters
 // ========================================
 
-@description('Environment name (e.g. demo, dev, prod)')
-param environment string = 'demo'
-
 @description('Azure region for resource deployment')
 param location string = 'Switzerland North'
-
-@description('Short location code used in resource naming')
-param locationacr string = 'chn'
 
 @description('Name of the Cosmos DB account')
 param cosmosDbAccountName string = 'cosmos-fabmedical-chn-001'
@@ -33,7 +27,7 @@ param webAppName string = 'webapp-fabmedical-chn-001'
 param webappImageAndTag string = 'mcr.microsoft.com/k8se/quickstart:latest'
 
 @description('Name of the content-api Web App')
-param webApiName string = 'webapp-fabmedical-chn-002'
+param webApiName string = 'webapi-fabmedical-chn-002'
 
 @description('Docker image and tag for content-api')
 param webapiImageAndTag string = 'mcr.microsoft.com/k8se/quickstart:latest'
@@ -44,6 +38,15 @@ param keyVaultName string = 'kv-fabmedical-chn-001'
 @description('Name of the Container App Environment')
 param containerAppEnvironmentName string = 'cae-fabmedical-chn-001'
 
+@description('Name of the User-Assigned Managed Identity')
+param managedIdentityName string = 'id-fabmedical-chn-001'
+
+@description('Name of the Log Analytics Workspace')
+param logAnalyticsWorkspaceName string = 'logs-fabmedical-chn-001'
+
+@description('Name of the Application Insights instance')
+param appInsightsName string = 'ai-fabmedical-chn-001'
+
 // ========================================
 // Modules
 // ========================================
@@ -51,9 +54,9 @@ param containerAppEnvironmentName string = 'cae-fabmedical-chn-001'
 module monitoring 'modules/monitoring.bicep' = {
   name: 'monitoringDeployment'
   params: {
-    environment: environment
     location: location
-    locationacr: locationacr
+    logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
+    appInsightsName: appInsightsName
   }
 }
 
@@ -69,9 +72,8 @@ module cosmosdb 'modules/cosmosdb.bicep' = {
 module managedIdentity 'modules/managed-identity.bicep' = {
   name: 'managedIdentityDeployment'
   params: {
-    environment: environment
+    managedIdentityName: managedIdentityName
     location: location
-    locationacr: locationacr
   }
 }
 

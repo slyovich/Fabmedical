@@ -1,9 +1,13 @@
-param environment string
+@description('Name of the Log Analytics Workspace')
+param logAnalyticsWorkspaceName string
+
+@description('Name of the Application Insights instance')
+param appInsightsName string
+
 param location string
-param locationacr string
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10-01' = {
-  name: 'logs-brownbag-${environment}-${locationacr}-01'
+  name: logAnalyticsWorkspaceName
   location: location
   properties: {
     sku: {
@@ -14,7 +18,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2020-10
 }
 
 resource appInsightsComponents 'Microsoft.Insights/components@2020-02-02' = {
-  name: 'insights-brownbag-${environment}-${locationacr}-01'
+  name: appInsightsName
   location: location
   kind: 'web'
   properties: {

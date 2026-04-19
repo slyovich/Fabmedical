@@ -1,9 +1,10 @@
-param environment string
+@description('Name of the User-Assigned Managed Identity')
+param managedIdentityName string
+
 param location string
-param locationacr string
 
 resource appUserIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: 'appidentity-brownbag-${environment}-${locationacr}-01'
+  name: managedIdentityName
   location: location 
 }
 

@@ -43,7 +43,7 @@ resource mongoDb 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases@2021-06
       id: 'contentdb'
     }
     options: {
-      throughput: 600
+      throughput: 400
     }
   }
 }

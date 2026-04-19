@@ -13,15 +13,14 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2021-06-01-pr
   }
 }
 
-resource acrPullRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: resourceGroup()
-  name: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
-}
+@description('Built-in AcrPull role definition ID')
+var acrPullRoleDefinitionId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
-  name: guid(subscription().id, acrname, 'AcrPullAppUserAssigned')
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(resourceGroup().id, containerRegistry.name, identityPrincipalId, acrPullRoleDefinitionId)
+  scope: containerRegistry
   properties: {
-    roleDefinitionId: acrPullRoleDefinition.id
+    roleDefinitionId: acrPullRoleDefinitionId
     principalId: identityPrincipalId
     principalType: 'ServicePrincipal'
   }
