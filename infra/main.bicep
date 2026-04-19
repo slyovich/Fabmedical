@@ -160,7 +160,7 @@ module containerApps 'modules/container-apps.bicep' = {
         name: 'ca-content-api'
         imageAndTag: webapiImageAndTag
         targetPort: 3001
-        externalIngress: false
+        externalIngress: true
         minReplicas: 0
         maxReplicas: 3
         cpu: '0.25'
