@@ -122,10 +122,18 @@ Azure Cosmos for Mongo DB enables us to use Mongo DB database as a service. In o
 
 1. Create an Azure Cosmos for Mongo DB
 2. Create the database named `contentdb`
-3. Execute the following commands (example with Powershell Core):
+3. Execute the following commands:
+
+   **PowerShell Core (Windows)**
 
             cd ./content-init
             $env:MONGODB_CONNECTION="mongodb://<ACCOUNT-NAME>:<PRIMARY-KEY>@<ACCOUNT-NAME>.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
+            npm start
+
+   **Bash (Ubuntu / MacOS)**
+
+            cd ./content-init
+            export MONGODB_CONNECTION="mongodb://<ACCOUNT-NAME>:<PRIMARY-KEY>@<ACCOUNT-NAME>.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
             npm start
 
 4. When initialized, update the indexing policy of the automatically created `sessions` collection including the index on the field `startTime`, as illustrated in the image below. This property is used to sort sessions documents when fetched through the backend API.
@@ -133,7 +141,13 @@ Azure Cosmos for Mongo DB enables us to use Mongo DB database as a service. In o
 
 ## Container registry
 
-Our docker images are made available to our Azure services through an Azure Container Registry. The following commands enable you to publish your images into this registry
+Our docker images are made available to our Azure services through an Azure Container Registry. The following commands enable you to publish your images into this registry.
+
+> **Note (Apple Silicon / ARM Macs):** Azure Container Apps requires `linux/amd64` images. If you build on an Apple Silicon Mac (M1/M2/M3/M4), Docker produces `linux/arm64` images by default, which will fail at deployment with:
+> `no child with platform linux/amd64 in index`.
+> Use `--platform linux/amd64` on `docker build` to force a cross-platform build.
+
+**PowerShell Core (Windows)**
 
       # Login with your account to Azure
       az login --tenant <tenant-id>
@@ -149,6 +163,24 @@ Our docker images are made available to our Azure services through an Azure Cont
 
       cd ./content-web
       docker build -t <acrName>.azurecr.io/content/web:<tag> .
+      docker push <acrName>.azurecr.io/content/web:<tag>
+
+**Bash (Ubuntu / MacOS)**
+
+      # Login with your account to Azure
+      az login --tenant <tenant-id>
+
+      # Get an access token to login to docker
+      TOKEN=$(az acr login --name <acrName> --expose-token --output tsv --query accessToken)
+      docker login <acrName>.azurecr.io --username 00000000-0000-0000-0000-000000000000 --password "$TOKEN"
+
+      # Build and publish your images (--platform ensures compatibility with Azure Container Apps)
+      cd ./content-api
+      docker build --platform linux/amd64 -t <acrName>.azurecr.io/content/api:<tag> .
+      docker push <acrName>.azurecr.io/content/api:<tag>
+
+      cd ./content-web
+      docker build --platform linux/amd64 -t <acrName>.azurecr.io/content/web:<tag> .
       docker push <acrName>.azurecr.io/content/web:<tag>
 
 ## Phase 1 - PoC
