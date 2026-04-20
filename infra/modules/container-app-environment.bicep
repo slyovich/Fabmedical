@@ -71,6 +71,11 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2026-01-01' 
         enabled: true
       }
     }
+    peerAuthentication: {
+      mtls: {
+        enabled: false
+      }
+    }
   }
 }
 

@@ -100,16 +100,19 @@ resource apps 'Microsoft.App/containerApps@2026-01-01' = [
     }
     properties: {
       managedEnvironmentId: containerAppEnvironmentId
+      workloadProfileName: 'Consumption'
       configuration: {
         // --- Dapr Configuration ---
-        dapr: app.?daprAppId != null ? {
-          enabled: true
-          appId: app.daprAppId!
-          appPort: app.?daprAppPort ?? app.targetPort
-          appProtocol: app.?daprAppProtocol ?? 'http'
-        } : {
-          enabled: false
-        }
+        dapr: app.?daprAppId != null
+          ? {
+              enabled: true
+              appId: app.daprAppId!
+              appPort: app.?daprAppPort ?? app.targetPort
+              appProtocol: app.?daprAppProtocol ?? 'http'
+            }
+          : {
+              enabled: false
+            }
 
         identitySettings: [
           {
@@ -132,6 +135,13 @@ resource apps 'Microsoft.App/containerApps@2026-01-01' = [
           targetPort: app.targetPort
           transport: 'auto'
           allowInsecure: false
+          exposedPort: 0
+          traffic: [
+            {
+              weight: 100
+              latestRevision: true
+            }
+          ]
         }
 
         // --- Secrets ---
@@ -163,6 +173,8 @@ resource apps 'Microsoft.App/containerApps@2026-01-01' = [
         scale: {
           minReplicas: app.?minReplicas ?? 0
           maxReplicas: app.?maxReplicas ?? 3
+          cooldownPeriod: 300
+          pollingInterval: 30
         }
       }
     }

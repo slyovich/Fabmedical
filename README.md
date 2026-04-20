@@ -65,7 +65,7 @@ If you want to keep the Node startup (instead of `ng serve`), use these steps.
 
    node content-web/app.js
 
-5. Open http://localhost:3000
+5. Open <http://localhost:3000>
 
 Notes:
 
@@ -225,6 +225,32 @@ This deploys the following resources:
 | Cosmos DB (Mongo) | Database backend |
 | Key Vault | Secret management (MongoDB connection string) |
 | Application Insights | Distributed tracing and monitoring |
+
+### New Container Image deployment
+
+#### Using Bicep Scripts
+
+To deploy a new container image, update the `webapiImageAndTag` and `webappImageAndTag` parameters in `infra/main.bicep` and redeploy the stack.
+
+```bash
+az deployment group create \
+  --resource-group <resource-group-name> \
+  --template-file infra/main.bicep \
+  --parameters \
+      webapiImageAndTag='<acrName>.azurecr.io/content/api:<tag>' \
+      webappImageAndTag='<acrName>.azurecr.io/content/web:<tag>'
+```
+
+#### Using AZ CLI
+
+To deploy a new container image using the AZ CLI, use the following command:
+
+```bash
+az containerapp update \
+  --name <container-app-name> \
+  --resource-group <resource-group-name> \
+  --image <image-and-tag>
+```
 
 ### Service-to-service communication with Dapr
 
