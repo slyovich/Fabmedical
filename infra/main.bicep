@@ -14,20 +14,20 @@ param enableFreeTierForCosmos bool = true
 @description('Name of the Azure Container Registry')
 param acrname string = 'acrfabmedicalchn001'
 
-@description('Number of App Service Plan instances')
-param webAppPlanScaling int = 1
+// @description('Number of App Service Plan instances')
+// param webAppPlanScaling int = 1
 
-@description('Name of the App Service Plan')
-param webAppPlanName string = 'asp-fabmedical-chn-001'
+// @description('Name of the App Service Plan')
+// param webAppPlanName string = 'asp-fabmedical-chn-001'
 
-@description('Name of the content-web Web App')
-param webAppName string = 'webapp-fabmedical-chn-001'
+// @description('Name of the content-web Web App')
+// param webAppName string = 'webapp-fabmedical-chn-001'
+
+// @description('Name of the content-api Web App')
+// param webApiName string = 'webapi-fabmedical-chn-002'
 
 @description('Docker image and tag for content-web')
 param webappImageAndTag string = 'mcr.microsoft.com/k8se/quickstart:latest'
-
-@description('Name of the content-api Web App')
-param webApiName string = 'webapi-fabmedical-chn-002'
 
 @description('Docker image and tag for content-api')
 param webapiImageAndTag string = 'mcr.microsoft.com/k8se/quickstart:latest'
@@ -86,14 +86,14 @@ module acr 'modules/acr.bicep' = {
   }
 }
 
-module appServicePlan 'modules/app-service-plan.bicep' = {
-  name: 'appServicePlanDeployment'
-  params: {
-    location: location
-    webAppPlanName: webAppPlanName
-    webAppPlanScaling: webAppPlanScaling
-  }
-}
+// module appServicePlan 'modules/app-service-plan.bicep' = {
+//   name: 'appServicePlanDeployment'
+//   params: {
+//     location: location
+//     webAppPlanName: webAppPlanName
+//     webAppPlanScaling: webAppPlanScaling
+//   }
+// }
 
 module keyVault 'modules/key-vault.bicep' = {
   name: 'keyVaultDeployment'
@@ -105,38 +105,38 @@ module keyVault 'modules/key-vault.bicep' = {
   }
 }
 
-module webApi 'modules/web-api.bicep' = {
-  name: 'webApiDeployment'
-  params: {
-    webApiName: webApiName
-    location: location
-    appServicePlanId: appServicePlan.outputs.appServicePlanId
-    acrname: acrname
-    webapiImageAndTag: webapiImageAndTag
-    identityId: managedIdentity.outputs.identityId
-    identityClientId: managedIdentity.outputs.identityClientId
-    instrumentationKey: monitoring.outputs.instrumentationKey
-    connectionString: monitoring.outputs.connectionString
-    keyVaultName: keyVault.outputs.keyVaultName
-    keyVaultSecretName: keyVault.outputs.mongoDbSecretName
-  }
-}
+// module webApi 'modules/web-api.bicep' = {
+//   name: 'webApiDeployment'
+//   params: {
+//     webApiName: webApiName
+//     location: location
+//     appServicePlanId: appServicePlan.outputs.appServicePlanId
+//     acrname: acrname
+//     webapiImageAndTag: webapiImageAndTag
+//     identityId: managedIdentity.outputs.identityId
+//     identityClientId: managedIdentity.outputs.identityClientId
+//     instrumentationKey: monitoring.outputs.instrumentationKey
+//     connectionString: monitoring.outputs.connectionString
+//     keyVaultName: keyVault.outputs.keyVaultName
+//     keyVaultSecretName: keyVault.outputs.mongoDbSecretName
+//   }
+// }
 
-module webApp 'modules/web-app.bicep' = {
-  name: 'webAppDeployment'
-  params: {
-    webAppName: webAppName
-    location: location
-    appServicePlanId: appServicePlan.outputs.appServicePlanId
-    acrname: acrname
-    webappImageAndTag: webappImageAndTag
-    identityId: managedIdentity.outputs.identityId
-    identityClientId: managedIdentity.outputs.identityClientId
-    instrumentationKey: monitoring.outputs.instrumentationKey
-    connectionString: monitoring.outputs.connectionString
-    contentApiHostName: webApi.outputs.webApiDefaultHostName
-  }
-}
+// module webApp 'modules/web-app.bicep' = {
+//   name: 'webAppDeployment'
+//   params: {
+//     webAppName: webAppName
+//     location: location
+//     appServicePlanId: appServicePlan.outputs.appServicePlanId
+//     acrname: acrname
+//     webappImageAndTag: webappImageAndTag
+//     identityId: managedIdentity.outputs.identityId
+//     identityClientId: managedIdentity.outputs.identityClientId
+//     instrumentationKey: monitoring.outputs.instrumentationKey
+//     connectionString: monitoring.outputs.connectionString
+//     contentApiHostName: webApi.outputs.webApiDefaultHostName
+//   }
+// }
 
 module containerAppEnvironment 'modules/container-app-environment.bicep' = {
   name: 'containerAppEnvironmentDeployment'
@@ -160,11 +160,14 @@ module containerApps 'modules/container-apps.bicep' = {
         name: 'ca-content-api'
         imageAndTag: webapiImageAndTag
         targetPort: 3001
-        externalIngress: true
+        externalIngress: false
         minReplicas: 0
         maxReplicas: 3
         cpu: '0.25'
         memory: '0.5Gi'
+        daprAppId: 'content-api'
+        daprAppPort: 3001
+        daprAppProtocol: 'http'
         env: [
           {
             name: 'MONGODB_CONNECTION'
@@ -195,10 +198,13 @@ module containerApps 'modules/container-apps.bicep' = {
         maxReplicas: 3
         cpu: '0.25'
         memory: '0.5Gi'
+        daprAppId: 'content-web'
+        daprAppPort: 3000
+        daprAppProtocol: 'http'
         env: [
           {
             name: 'CONTENT_API_URL'
-            value: 'https://ca-content-api.${containerAppEnvironment.outputs.defaultDomain}'
+            value: 'http://localhost:3500/v1.0/invoke/content-api/method'
           }
           {
             name: 'APPINSIGHTS_INSTRUMENTATIONKEY'

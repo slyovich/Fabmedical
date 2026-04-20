@@ -52,6 +52,15 @@ type containerAppConfig = {
 
   @description('Memory allocated to the container (e.g. 0.5Gi, 1Gi)')
   memory: string
+
+  @description('Dapr App ID for service discovery (omit to disable Dapr)')
+  daprAppId: string?
+
+  @description('Port that Dapr uses to communicate with the application')
+  daprAppPort: int?
+
+  @description('Protocol used by Dapr to communicate with the app (http or grpc)')
+  daprAppProtocol: ('http' | 'grpc')?
 }
 
 @description('Environment variable definition')
@@ -92,6 +101,16 @@ resource apps 'Microsoft.App/containerApps@2026-01-01' = [
     properties: {
       managedEnvironmentId: containerAppEnvironmentId
       configuration: {
+        // --- Dapr Configuration ---
+        dapr: app.?daprAppId != null ? {
+          enabled: true
+          appId: app.daprAppId!
+          appPort: app.?daprAppPort ?? app.targetPort
+          appProtocol: app.?daprAppProtocol ?? 'http'
+        } : {
+          enabled: false
+        }
+
         identitySettings: [
           {
             identity: identityId

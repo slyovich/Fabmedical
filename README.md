@@ -196,3 +196,75 @@ The following schema illustrates the architecture we've built for this phase.
 As our PoC was successful, the next step is to automatise our code deployment to remove manual activities and to prepare our environment to code changes and fast release.
 
 ![Automation](./img/diagrams-Azure%20architecture%20-%20Code%20deployment%20automation.png)
+
+## Phase 3 - Azure Container Apps with Dapr
+
+In this phase, we migrate from Azure App Services to **Azure Container Apps** and leverage **Dapr** (Distributed Application Runtime) for secure, resilient service-to-service communication.
+
+### Deployment
+
+The entire infrastructure is defined as Bicep modules orchestrated by `infra/main.bicep`. Deploy it with:
+
+```bash
+az deployment group create \
+  --resource-group <resource-group-name> \
+  --template-file infra/main.bicep \
+  --parameters \
+      webapiImageAndTag='<acrName>.azurecr.io/content/api:<tag>' \
+      webappImageAndTag='<acrName>.azurecr.io/content/web:<tag>'
+```
+
+This deploys the following resources:
+
+| Resource | Purpose |
+|----------|---------|
+| Container App Environment | Shared hosting environment with Log Analytics integration |
+| `ca-content-api` | Backend API container (internal ingress only) |
+| `ca-content-web` | Frontend web container (external ingress) |
+| Managed Identity | Passwordless authentication to ACR and Key Vault |
+| Cosmos DB (Mongo) | Database backend |
+| Key Vault | Secret management (MongoDB connection string) |
+| Application Insights | Distributed tracing and monitoring |
+
+### Service-to-service communication with Dapr
+
+Instead of calling `content-api` through its public FQDN, `content-web` uses **Dapr service invocation** to communicate with the backend. This provides several benefits:
+
+- **mTLS encryption** — All inter-service traffic is automatically encrypted and mutually authenticated.
+- **Service discovery** — No need to know the target URL; Dapr resolves services by their `appId`.
+- **Built-in resiliency** — Automatic retries, timeouts, and circuit-breakers.
+- **Distributed tracing** — W3C Trace Context headers are injected automatically.
+
+#### How it works
+
+Each Container App has a **Dapr sidecar** configured with a unique `appId`:
+
+| Container App | Dapr App ID | Dapr Port | Ingress |
+|---------------|-------------|-----------|---------|
+| `ca-content-api` | `content-api` | 3001 | Internal |
+| `ca-content-web` | `content-web` | 3000 | External |
+
+The `content-web` application calls the Dapr sidecar running on `localhost:3500` instead of the remote API hostname:
+
+```
+# Before (direct call via public FQDN)
+CONTENT_API_URL=https://ca-content-api.<defaultDomain>
+
+# After (Dapr service invocation via local sidecar)
+CONTENT_API_URL=http://localhost:3500/v1.0/invoke/content-api/method
+```
+
+When `content-web` makes a request such as `GET /sessions`, it translates to:
+
+```
+GET http://localhost:3500/v1.0/invoke/content-api/method/sessions
+    │                          │                │       │
+    │                          │                │       └─ Route on content-api
+    │                          │                └───────── Dapr App ID
+    │                          └────────────────────────── Dapr invoke API
+    └───────────────────────────────────────────────────── Local sidecar
+```
+
+> **Note:** No application code change was required. The existing `content-web/app.js` already concatenates `CONTENT_API_URL + '/sessions'`, which naturally composes the correct Dapr invocation URL.
+
+Since `content-api` is now configured with **internal ingress only**, it is no longer publicly accessible — all traffic must flow through the Dapr sidecar, enforcing a Zero Trust communication model.
