@@ -7,7 +7,7 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-03-15' = {
   location: location
   kind: 'MongoDB'
   properties: {
-    defaultIdentity: 'FirstIdentity'
+    defaultIdentity: 'FirstPartyIdentity'
     enableFreeTier: enableFreeTierForCosmos
     apiProperties: {
       serverVersion: '4.2'

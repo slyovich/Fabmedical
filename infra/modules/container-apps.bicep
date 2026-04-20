@@ -61,6 +61,9 @@ type containerAppConfig = {
 
   @description('Protocol used by Dapr to communicate with the app (http or grpc)')
   daprAppProtocol: ('http' | 'grpc')?
+
+  @description('Path for health probes (defaults to /)')
+  healthProbePath: string?
 }
 
 @description('Environment variable definition')
@@ -167,6 +170,35 @@ resource apps 'Microsoft.App/containerApps@2026-01-01' = [
                 { name: envItem.name },
                 envItem.?secretRef != null ? { secretRef: envItem.secretRef } : { value: envItem.value }
               )
+            ]
+            probes: [
+              {
+                type: 'Startup'
+                httpGet: {
+                  port: app.targetPort
+                  path: app.?healthProbePath ?? '/'
+                }
+                initialDelaySeconds: 5
+                periodSeconds: 5
+              }
+              {
+                type: 'Liveness'
+                httpGet: {
+                  port: app.targetPort
+                  path: app.?healthProbePath ?? '/'
+                }
+                initialDelaySeconds: 15
+                periodSeconds: 10
+              }
+              {
+                type: 'Readiness'
+                httpGet: {
+                  port: app.targetPort
+                  path: app.?healthProbePath ?? '/'
+                }
+                initialDelaySeconds: 15
+                periodSeconds: 10
+              }
             ]
           }
         ]

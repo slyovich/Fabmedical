@@ -47,6 +47,9 @@ param logAnalyticsWorkspaceName string = 'logs-fabmedical-chn-001'
 @description('Name of the Application Insights instance')
 param appInsightsName string = 'ai-fabmedical-chn-001'
 
+@description('Email address for alerts')
+param alertEmailAddress string = 'admin@example.com'
+
 // ========================================
 // Modules
 // ========================================
@@ -57,6 +60,7 @@ module monitoring 'modules/monitoring.bicep' = {
     location: location
     logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
     appInsightsName: appInsightsName
+    alertEmailAddress: alertEmailAddress
   }
 }
 

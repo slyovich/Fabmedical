@@ -30,3 +30,52 @@ resource appInsightsComponents 'Microsoft.Insights/components@2020-02-02' = {
 output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.id
 output instrumentationKey string = appInsightsComponents.properties.InstrumentationKey
 output connectionString string = appInsightsComponents.properties.ConnectionString
+
+@description('Email address for alerts')
+param alertEmailAddress string
+
+resource actionGroup 'Microsoft.Insights/actionGroups@2022-06-01' = {
+  name: 'ag-container-app-alerts'
+  location: 'global'
+  properties: {
+    groupShortName: 'ca-alerts'
+    enabled: true
+    emailReceivers: [
+      {
+        name: 'EmailAlert'
+        emailAddress: alertEmailAddress
+        useCommonAlertSchema: true
+      }
+    ]
+  }
+}
+
+resource logAlert 'Microsoft.Insights/scheduledQueryRules@2022-06-15' = {
+  name: 'ContainerAppRevisionError'
+  location: location
+  properties: {
+    description: 'Alert for Container App revision errors'
+    severity: 1
+    enabled: true
+    scopes: [
+      logAnalyticsWorkspace.id
+    ]
+    evaluationFrequency: 'PT5M'
+    windowSize: 'PT5M'
+    criteria: {
+      allOf: [
+        {
+          query: 'ContainerAppSystemLogs_CL\n| where Log_s contains "error" or Log_s contains "failed" or Reason_s == "RevisionFailed"'
+          timeAggregation: 'Count'
+          operator: 'GreaterThan'
+          threshold: 0
+        }
+      ]
+    }
+    actions: {
+      actionGroups: [
+        actionGroup.id
+      ]
+    }
+  }
+}
