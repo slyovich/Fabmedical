@@ -31,6 +31,10 @@ param workloadProfileType string = 'Consumption'
 @description('Resource ID of the User Assigned Managed Identity')
 param identityId string
 
+@description('Application Insights connection string')
+@secure()
+param appInsightsConnectionString string
+
 // ========================================
 // Container App Environment
 // ========================================
@@ -53,6 +57,7 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2026-01-01' 
         sharedKey: listKeys(logAnalyticsWorkspaceId, '2020-10-01').primarySharedKey
       }
     }
+    daprAIConnectionString: appInsightsConnectionString
     publicNetworkAccess: 'Enabled'
     zoneRedundant: zoneRedundant
     workloadProfiles: [

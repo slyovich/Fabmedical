@@ -145,6 +145,7 @@ module containerAppEnvironment 'modules/container-app-environment.bicep' = {
     location: location
     logAnalyticsWorkspaceId: monitoring.outputs.logAnalyticsWorkspaceId
     identityId: managedIdentity.outputs.identityId
+    appInsightsConnectionString: monitoring.outputs.connectionString
   }
 }
 
