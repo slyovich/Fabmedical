@@ -14,9 +14,11 @@ param tenantId string = subscription().tenantId
 @description('Principal ID of the Managed Identity that needs access to secrets')
 param identityPrincipalId string
 
-@description('The MongoDB connection string to store as a secret')
-@secure()
-param mongoDbConnectionString string
+@description('Name of the Cosmos DB account')
+param cosmosDbAccountName string
+
+@description('Name of the MongoDB database')
+param mongoDbName string
 
 // ========================================
 // Key Vault
@@ -53,11 +55,15 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
 // Secrets
 // ========================================
 
+resource cosmosDb 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' existing = {
+  name: cosmosDbAccountName
+}
+
 resource mongoDbSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   parent: keyVault
   name: 'mongodb-connection-string'
   properties: {
-    value: mongoDbConnectionString
+    value: 'mongodb://${cosmosDbAccountName}:${cosmosDb.listKeys().primaryMasterKey}@${cosmosDbAccountName}.mongo.cosmos.azure.com:10255/${mongoDbName}?ssl=true&replicaSet=globaldb&retrywrites=false'
     contentType: 'text/plain'
   }
 }

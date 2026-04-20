@@ -105,7 +105,8 @@ module keyVault 'modules/key-vault.bicep' = {
     keyVaultName: keyVaultName
     location: location
     identityPrincipalId: managedIdentity.outputs.identityPrincipalId
-    mongoDbConnectionString: 'mongodb://${cosmosdb.outputs.cosmosDbAccountName}:${cosmosdb.outputs.cosmosDbPrimaryKey}@${cosmosdb.outputs.cosmosDbAccountName}.mongo.cosmos.azure.com:10255/${cosmosdb.outputs.mongoDbName}?ssl=true&replicaSet=globaldb&retrywrites=false'
+    cosmosDbAccountName: cosmosdb.outputs.cosmosDbAccountName
+    mongoDbName: cosmosdb.outputs.mongoDbName
   }
 }
 

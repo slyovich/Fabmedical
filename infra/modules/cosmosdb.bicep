@@ -101,5 +101,4 @@ resource sessionsCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDataba
 }
 
 output cosmosDbAccountName string = cosmosDbAccount.name
-output cosmosDbPrimaryKey string = cosmosDbAccount.listKeys().primaryMasterKey
 output mongoDbName string = mongoDb.name
