@@ -33,6 +33,7 @@ This repository now contains a ready-to-use Dev Container setup under `.devconta
 
 - Node.js via nvm (versions 10, 16, 20; default 16)
 - Angular CLI 8.3.29
+- Azure Functions Core Tools v4 (`func`)
 - MongoDB 4.0 service (docker-compose)
 - Azure CLI + Bicep
 - Docker CLI (host daemon access)
@@ -43,7 +44,29 @@ This repository now contains a ready-to-use Dev Container setup under `.devconta
 - Data initialization: `node content-init/server.js`
 - Frontend build (Angular): `npm --prefix content-web run build`
 - Frontend server (Node/Express): `node content-web/app.js`
+- Azure Function (Service Bus): `npm --prefix content-function start`
 - Gateway (Envoy image build): `docker build -t content-gateway:1.0.0 ./content-gateway`
+
+### Run Azure Function in Dev Container
+
+The Azure Function project is available in `content-function/` and listens to the Service Bus queue `notifications`.
+
+1. Install dependencies:
+
+   npm --prefix content-function install
+
+2. Start the function host:
+
+   npm --prefix content-function start
+
+3. Expected startup output includes:
+   - `Functions:`
+   - `notifications: serviceBusTrigger`
+
+Notes:
+
+- In this devcontainer, `SERVICEBUS_CONNECTION` is already provided by `.devcontainer/devcontainer.json`.
+- `local.settings.json` can still be used for local overrides when needed.
 
 ### Run web app with Node (recommended for `/api/*` routes)
 
@@ -114,29 +137,53 @@ And use the value returned in `IPAddress` to run your backend container
       docker build -t content-web:1.0.0 .
       docker container run --name content-web -p 3000:3000 -e CONTENT_API_URL=http://<IPAddress>:3001 -d content-web:1.0.0
 
+### Azure Function (Service Bus Trigger)
+
+Build and run the Function as a container.
+
+      cd ./content-function
+      docker build --platform linux/amd64 -t content-function:1.0.0 .
+
+      # Reuse the Mongo DB container IP address
+      docker inspect mongo | grep IPAddress
+
+      docker container run --name content-function -p 7071:80 \
+        -e AzureWebJobsStorage="<storage-connection-string>" \
+        -e SERVICEBUS_CONNECTION="<service-bus-connection-string>" \
+        -e MONGODB_CONNECTION="mongodb://<IPAddress>:27017/contentdb" \
+        -d content-function:1.0.0
+
+Notes:
+
+- `SERVICEBUS_CONNECTION` must target a Service Bus namespace/queue containing `notifications`.
+- `AzureWebJobsStorage` is required by the Functions host runtime.
+- This function is queue-triggered (no public HTTP endpoint); validate execution through container logs:
+
+      docker logs -f content-function
+
 # Run in Azure
 
 ## Database
 
 Azure Cosmos for Mongo DB enables us to use Mongo DB database as a service. In order to initialize the database,
 
-1. Create an Azure Cosmos for Mongo DB
-2. Create the database named `contentdb`
-3. Execute the following commands:
+1.  Create an Azure Cosmos for Mongo DB
+2.  Create the database named `contentdb`
+3.  Execute the following commands:
 
-   **PowerShell Core (Windows)**
+    **PowerShell Core (Windows)**
 
-            cd ./content-init
-            $env:MONGODB_CONNECTION="mongodb://<ACCOUNT-NAME>:<PRIMARY-KEY>@<ACCOUNT-NAME>.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
-            npm start
+             cd ./content-init
+             $env:MONGODB_CONNECTION="mongodb://<ACCOUNT-NAME>:<PRIMARY-KEY>@<ACCOUNT-NAME>.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
+             npm start
 
-   **Bash (Ubuntu / MacOS)**
+    **Bash (Ubuntu / MacOS)**
 
-            cd ./content-init
-            export MONGODB_CONNECTION="mongodb://<ACCOUNT-NAME>:<PRIMARY-KEY>@<ACCOUNT-NAME>.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
-            npm start
+             cd ./content-init
+             export MONGODB_CONNECTION="mongodb://<ACCOUNT-NAME>:<PRIMARY-KEY>@<ACCOUNT-NAME>.mongo.cosmos.azure.com:10255/contentdb?ssl=true&replicaSet=globaldb&retrywrites=false"
+             npm start
 
-4. When initialized, update the indexing policy of the automatically created `sessions` collection including the index on the field `startTime`, as illustrated in the image below. This property is used to sort sessions documents when fetched through the backend API.
+4.  When initialized, update the indexing policy of the automatically created `sessions` collection including the index on the field `startTime`, as illustrated in the image below. This property is used to sort sessions documents when fetched through the backend API.
     ![Indexing policy](./img/sessions-indexing-policy.png)
 
 ## Container registry
@@ -165,6 +212,10 @@ Our docker images are made available to our Azure services through an Azure Cont
       docker build -t <acrName>.azurecr.io/content/web:<tag> .
       docker push <acrName>.azurecr.io/content/web:<tag>
 
+      cd ./content-function
+      docker build -t <acrName>.azurecr.io/content/function:<tag> .
+      docker push <acrName>.azurecr.io/content/function:<tag>
+
 **Bash (Ubuntu / MacOS)**
 
       # Login with your account to Azure
@@ -182,6 +233,10 @@ Our docker images are made available to our Azure services through an Azure Cont
       cd ./content-web
       docker build --platform linux/amd64 -t <acrName>.azurecr.io/content/web:<tag> .
       docker push <acrName>.azurecr.io/content/web:<tag>
+
+      cd ./content-function
+      docker build --platform linux/amd64 -t <acrName>.azurecr.io/content/function:<tag> .
+      docker push <acrName>.azurecr.io/content/function:<tag>
 
 ## Phase 1 - PoC
 
@@ -216,15 +271,15 @@ az deployment group create \
 
 This deploys the following resources:
 
-| Resource | Purpose |
-|----------|---------|
+| Resource                  | Purpose                                                   |
+| ------------------------- | --------------------------------------------------------- |
 | Container App Environment | Shared hosting environment with Log Analytics integration |
-| `ca-content-api` | Backend API container (internal ingress only) |
-| `ca-content-web` | Frontend web container (external ingress) |
-| Managed Identity | Passwordless authentication to ACR and Key Vault |
-| Cosmos DB (Mongo) | Database backend |
-| Key Vault | Secret management (MongoDB connection string) |
-| Application Insights | Distributed tracing and monitoring |
+| `ca-content-api`          | Backend API container (internal ingress only)             |
+| `ca-content-web`          | Frontend web container (external ingress)                 |
+| Managed Identity          | Passwordless authentication to ACR and Key Vault          |
+| Cosmos DB (Mongo)         | Database backend                                          |
+| Key Vault                 | Secret management (MongoDB connection string)             |
+| Application Insights      | Distributed tracing and monitoring                        |
 
 ### New Container Image deployment
 
@@ -265,10 +320,10 @@ Instead of calling `content-api` through its public FQDN, `content-web` uses **D
 
 Each Container App has a **Dapr sidecar** configured with a unique `appId`:
 
-| Container App | Dapr App ID | Dapr Port | Ingress |
-|---------------|-------------|-----------|---------|
-| `ca-content-api` | `content-api` | 3001 | Internal |
-| `ca-content-web` | `content-web` | 3000 | External |
+| Container App    | Dapr App ID   | Dapr Port | Ingress  |
+| ---------------- | ------------- | --------- | -------- |
+| `ca-content-api` | `content-api` | 3001      | Internal |
+| `ca-content-web` | `content-web` | 3000      | External |
 
 The `content-web` application calls the Dapr sidecar running on `localhost:3500` instead of the remote API hostname:
 

@@ -6,15 +6,16 @@
   "workspaceFolder": "/workspaces/Fabmedical",
   "remoteEnv": {
     "MONGODB_CONNECTION": "mongodb://mongo:27017/contentdb",
-    "CONTENT_API_URL": "http://localhost:3001"
+    "CONTENT_API_URL": "http://localhost:3001",
+    "SERVICEBUS_CONNECTION": "Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
   },
-  "runServices": ["mongo"],
+  "runServices": ["mongo", "sqledge", "servicebus-emulator"],
   "shutdownAction": "stopCompose",
   "features": {
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "forwardPorts": [3000, 3001, 4200, 8080, 27017],
+  "forwardPorts": [3000, 3001, 4200, 5300, 5672, 8080, 27017],
   "portsAttributes": {
     "3000": {
       "label": "content-web"
@@ -30,6 +31,12 @@
     },
     "27017": {
       "label": "MongoDB"
+    },
+    "5672": {
+      "label": "Service Bus (AMQP)"
+    },
+    "5300": {
+      "label": "Service Bus (Management)"
     }
   },
   "postCreateCommand": "bash -lc 'npm --prefix content-api install && npm --prefix content-init install && npm --prefix content-web install'",

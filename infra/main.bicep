@@ -32,8 +32,20 @@ param webappImageAndTag string = 'mcr.microsoft.com/k8se/quickstart:latest'
 @description('Docker image and tag for content-api')
 param webapiImageAndTag string = 'mcr.microsoft.com/k8se/quickstart:latest'
 
+@description('Docker image and tag for content-function')
+param functionImageAndTag string = 'mcr.microsoft.com/azure-functions/node:4-node16'
+
 @description('Name of the Key Vault')
 param keyVaultName string = 'kv-fabmedical-chn-001'
+
+@description('Name of the Service Bus namespace')
+param serviceBusNamespaceName string = 'sb-fabmedical-chn-001'
+
+@description('Name of the Service Bus queue')
+param serviceBusQueueName string = 'notifications'
+
+@description('Name of the Storage Account for Azure Functions runtime state')
+param storageAccountName string = 'stfabmedicalchn001'
 
 @description('Name of the Container App Environment')
 param containerAppEnvironmentName string = 'cae-fabmedical-chn-001'
@@ -90,6 +102,31 @@ module acr 'modules/acr.bicep' = {
   }
 }
 
+module serviceBus 'modules/service-bus.bicep' = {
+  name: 'serviceBusDeployment'
+  params: {
+    serviceBusNamespaceName: serviceBusNamespaceName
+    location: location
+    serviceBusSkuName: 'Standard'
+    queueName: serviceBusQueueName
+    lockDuration: 'PT1M'
+    maxDeliveryCount: 3
+    defaultMessageTimeToLive: 'PT1H'
+    duplicateDetectionHistoryTimeWindow: 'PT20S'
+    deadLetteringOnMessageExpiration: false
+    requiresDuplicateDetection: false
+    requiresSession: false
+  }
+}
+
+module storage 'modules/storage-account.bicep' = {
+  name: 'storageDeployment'
+  params: {
+    location: location
+    storageAccountName: storageAccountName
+  }
+}
+
 // module appServicePlan 'modules/app-service-plan.bicep' = {
 //   name: 'appServicePlanDeployment'
 //   params: {
@@ -107,6 +144,9 @@ module keyVault 'modules/key-vault.bicep' = {
     identityPrincipalId: managedIdentity.outputs.identityPrincipalId
     cosmosDbAccountName: cosmosdb.outputs.cosmosDbAccountName
     mongoDbName: cosmosdb.outputs.mongoDbName
+    storageAccountName: storage.outputs.storageAccountName
+    serviceBusNamespaceName: serviceBus.outputs.serviceBusNamespaceName
+    serviceBusAuthorizationRuleName: serviceBus.outputs.authorizationRuleName
   }
 }
 
@@ -180,6 +220,14 @@ module containerApps 'modules/container-apps.bicep' = {
             secretRef: 'mongodb-connection-string'
           }
           {
+            name: 'SERVICEBUS_CONNECTION'
+            secretRef: 'servicebus-connection-string'
+          }
+          {
+            name: 'SERVICEBUS_QUEUE_NAME'
+            value: serviceBus.outputs.queueName
+          }
+          {
             name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
             value: monitoring.outputs.instrumentationKey
           }
@@ -192,6 +240,10 @@ module containerApps 'modules/container-apps.bicep' = {
           {
             name: 'mongodb-connection-string'
             keyVaultUrl: '${keyVault.outputs.keyVaultUri}secrets/${keyVault.outputs.mongoDbSecretName}'
+          }
+          {
+            name: 'servicebus-connection-string'
+            keyVaultUrl: '${keyVault.outputs.keyVaultUri}secrets/${keyVault.outputs.serviceBusSecretName}'
           }
         ]
       }
@@ -219,6 +271,57 @@ module containerApps 'modules/container-apps.bicep' = {
           {
             name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
             value: monitoring.outputs.connectionString
+          }
+        ]
+      }
+      {
+        name: 'ca-content-function'
+        imageAndTag: functionImageAndTag
+        targetPort: 80
+        externalIngress: false
+        minReplicas: 0
+        maxReplicas: 3
+        cpu: '0.25'
+        memory: '0.5Gi'
+        enableHttpProbes: false
+        env: [
+          {
+            name: 'AzureWebJobsStorage'
+            secretRef: 'azure-webjobs-storage'
+          }
+          {
+            name: 'FUNCTIONS_WORKER_RUNTIME'
+            value: 'node'
+          }
+          {
+            name: 'MONGODB_CONNECTION'
+            secretRef: 'mongodb-connection-string'
+          }
+          {
+            name: 'SERVICEBUS_CONNECTION'
+            secretRef: 'servicebus-connection-string'
+          }
+          {
+            name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+            value: monitoring.outputs.instrumentationKey
+          }
+          {
+            name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+            value: monitoring.outputs.connectionString
+          }
+        ]
+        secrets: [
+          {
+            name: 'mongodb-connection-string'
+            keyVaultUrl: '${keyVault.outputs.keyVaultUri}secrets/${keyVault.outputs.mongoDbSecretName}'
+          }
+          {
+            name: 'servicebus-connection-string'
+            keyVaultUrl: '${keyVault.outputs.keyVaultUri}secrets/${keyVault.outputs.serviceBusSecretName}'
+          }
+          {
+            name: 'azure-webjobs-storage'
+            keyVaultUrl: '${keyVault.outputs.keyVaultUri}secrets/${keyVault.outputs.azureWebJobsStorageSecretName}'
           }
         ]
       }

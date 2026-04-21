@@ -5,19 +5,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Core build and debugging tools
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates \
-        curl \
-        git \
-        gnupg \
-        jq \
-        lsb-release \
-        make \
-        g++ \
-        python3 \
-        python3-pip \
-        iputils-ping \
-        netcat \
-        unzip \
+    ca-certificates \
+    curl \
+    git \
+    gnupg \
+    jq \
+    lsb-release \
+    make \
+    g++ \
+    python3 \
+    python3-pip \
+    iputils-ping \
+    netcat \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Azure CLI
@@ -33,7 +33,7 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | b
     && nvm install 20 \
     && nvm alias default 16 \
     && nvm use default \
-    && npm install -g npm@8 @angular/cli@8.3.29 mongosh \
+    && npm install -g npm@8 @angular/cli@8.3.29 mongosh azure-functions-core-tools@4 --unsafe-perm true \
     && npm config set legacy-peer-deps true
 
 # Make nvm available in interactive shells

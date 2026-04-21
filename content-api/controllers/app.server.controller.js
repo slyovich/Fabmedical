@@ -1,10 +1,12 @@
 const sessionController = require('./sessions.server.controller');
 const speakerController = require('./speakers.server.controller');
+const notificationController = require('./notifications.server.controller');
 
 const counters = {
     stats: 0,
     speakers: 0,
-    sessions: 0
+    sessions: 0,
+    notifications: 0
 };
 
 function stats() {
@@ -33,5 +35,12 @@ exports.sessionsGet = function(req, res) {
     sessionController.list({}, function(err, sessions) {
         counters.sessions++;
         res.json(sessions);
+    });
+};
+
+exports.notificationsGet = function(req, res) {
+    notificationController.list({}, function(err, notifications) {
+        counters.notifications++;
+        res.json(notifications);
     });
 };

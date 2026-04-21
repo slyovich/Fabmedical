@@ -100,5 +100,27 @@ resource sessionsCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDataba
   }
 }
 
+resource notificationsCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections@2023-03-01-preview' = {
+  name: 'notifications'
+  parent: mongoDb
+  properties: {
+    resource: {
+      id: 'notifications'
+      shardKey: {
+        _id: 'Hash'
+      }
+      indexes: [
+        {
+          key: {
+            keys: [
+              '_id'
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
+
 output cosmosDbAccountName string = cosmosDbAccount.name
 output mongoDbName string = mongoDb.name

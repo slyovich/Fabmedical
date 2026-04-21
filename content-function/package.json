@@ -1,0 +1,16 @@
+{
+  "name": "content-function",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Azure Function Node.js with Service Bus queue trigger",
+  "main": "notifications/index.js",
+  "scripts": {
+    "start": "func start"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "dependencies": {
+    "mongodb": "^4.17.2"
+  }
+}

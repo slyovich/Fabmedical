@@ -20,6 +20,7 @@ mongoose.connect(config.appSettings.db, { useNewUrlParser: true, useUnifiedTopol
 
 require('./models/session.model');
 require('./models/speakers.model');
+require('./models/notification.model');
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
