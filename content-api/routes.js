@@ -12,7 +12,7 @@ const init = function (app) {
         //res.status(200).send(JSON.stringify({version: process.env.BUILD_VERSION || '1.0.0'}));
         res.json({version: process.env.BUILD_VERSION || '1.0.0'});
     });
-    app.post("/messages", serviceBusController.publish);
+    app.post("/notifications", serviceBusController.publish);
     app.get("/", function (req, res) {
         res.status(200).send("");
     });

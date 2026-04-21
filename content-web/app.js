@@ -6,6 +6,7 @@ const request = require('request');
 const app = express();
 
 app.use(express.static(path.join(__dirname, 'dist/content-web')));
+app.use(express.json());
 const contentApiUrl = process.env.CONTENT_API_URL || "http://localhost:3001";
 
 
@@ -31,6 +32,16 @@ function getSpeakers(cb) {
 
 function stats(cb) {
   request(contentApiUrl + '/stats', function (err, response, body) {
+    if (err) {
+      return cb(err);
+    }
+    const data = JSON.parse(body);
+    cb(null, data);
+  });
+}
+
+function getNotifications(cb) {
+  request(contentApiUrl + '/notifications', function (err, response, body) {
     if (err) {
       return cb(err);
     }
@@ -66,6 +77,30 @@ app.get('/api/stats', function (req, res) {
       res.send(err);
     }
   });
+});
+app.get('/api/notifications', function (req, res) {
+  getNotifications(function (err, result) {
+    if (!err) {
+      res.send(result);
+    } else {
+      res.send(err);
+    }
+  });
+});
+app.post('/api/notifications', function (req, res) {
+  request.post(
+    {
+      url: contentApiUrl + '/notifications',
+      json: req.body
+    },
+    function (err, response, body) {
+      if (err) {
+        return res.status(500).send(err);
+      }
+
+      res.status(response.statusCode || 200).send(body);
+    }
+  );
 });
 app.get('/api/version', function (req, res) {
   //res.status(200).send(JSON.stringify({version: process.env.BUILD_VERSION || '1.0.0'}));

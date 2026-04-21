@@ -1,0 +1,48 @@
+<a name="subscription"></a>
+<div class="contentband bottom-ruled autosize">
+  <div class="row">
+    <div class="small-12 large-12">
+      <h1 class="page-title"><span class="header-icon sessions" style="text-indent: 0px">9</span>subscription</h1>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="small-12 large-8 column band-panel">
+      <form (ngSubmit)="onSubmit()" #subscriptionForm="ngForm" novalidate>
+        <label for="message">message</label>
+        <textarea
+          id="message"
+          name="message"
+          [(ngModel)]="message"
+          required
+          maxlength="255"
+          rows="4"></textarea>
+
+        <label for="publisher">publisher</label>
+        <input
+          id="publisher"
+          name="publisher"
+          type="text"
+          [(ngModel)]="publisher"
+          required
+          maxlength="50" />
+
+        <label for="type">type</label>
+        <select id="type" name="type" [(ngModel)]="type" required>
+          <option value="speaker">speaker</option>
+          <option value="session">session</option>
+        </select>
+
+        <button
+          type="submit"
+          class="button"
+          [disabled]="isSubmitting || !subscriptionForm.form.valid">
+          {{ isSubmitting ? 'Sending...' : 'Send notification' }}
+        </button>
+      </form>
+
+      <p *ngIf="successMessage" class="success-text">{{ successMessage }}</p>
+      <p *ngIf="errorMessage" class="error-text">{{ errorMessage }}</p>
+    </div>
+  </div>
+</div>

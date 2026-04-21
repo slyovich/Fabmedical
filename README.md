@@ -2,7 +2,7 @@
 
 # Quickstart
 
-Instead of initializing your own repositroy you can just fork this one to you
+Instead of initializing your own repositroy you can just fork this one to your
 own github account.
 This repo is a substract of the [Microsoft archived repo](https://github.com/microsoft/MCW-Cloud-native-applications).
 
@@ -10,7 +10,7 @@ This repo is a substract of the [Microsoft archived repo](https://github.com/mic
 
 Below is a diagram of the solution architecture you will build in this lab. It consists of a web application working with a backend API and relying on data stored in a Mongo DB. This application is made publicly available without any user authentication requirements.
 
-![Solution architecture](./img/diagrams-Solution%20overview.png)
+![Solution architecture](./img/diagrams-Solution%20overview.drawio.png)
 
 # Run locally
 
@@ -244,13 +244,13 @@ First of all, we start working on a proof of concept enabling us to validate our
 
 The following schema illustrates the architecture we've built for this phase.
 
-![Azure PoC architecture](./img/diagrams-Azure%20architecture%20-%20PoC.png)
+![Azure PoC architecture](./img/diagrams-Azure%20architecture%20-%20PoC.drawio.png)
 
 ## Phase 2 - Code deployment automation
 
 As our PoC was successful, the next step is to automatise our code deployment to remove manual activities and to prepare our environment to code changes and fast release.
 
-![Automation](./img/diagrams-Azure%20architecture%20-%20Code%20deployment%20automation.png)
+![Automation](./img/diagrams-Azure%20architecture%20-%20Code%20deployment%20automation.drawio.png)
 
 ## Phase 3 - Azure Container Apps with Dapr
 
