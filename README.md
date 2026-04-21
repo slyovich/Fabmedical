@@ -4,7 +4,7 @@
 
 Instead of initializing your own repositroy you can just fork this one to your
 own github account.
-This repo is a substract of the [Microsoft archived repo](https://github.com/microsoft/MCW-Cloud-native-applications).
+This repo is a substract of the [Microsoft archived repo](https://github.com/AzureCloudWorkshops/MCW-Cloud-Native-Apps).
 
 # Solution architecture
 

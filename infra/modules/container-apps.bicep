@@ -67,6 +67,39 @@ type containerAppConfig = {
 
   @description('Enable default HTTP health probes')
   enableHttpProbes: bool?
+
+  @description('Optional custom scaling rules (KEDA)')
+  scaleRules: scaleRuleConfig[]?
+}
+
+@description('Scale rule definition')
+type scaleRuleConfig = {
+  @description('Name of the scale rule')
+  name: string
+
+  @description('Custom scale rule configuration')
+  custom: customScaleRuleConfig?
+}
+
+@description('Custom scale rule configuration')
+type customScaleRuleConfig = {
+  @description('Scaler type, for example azure-servicebus')
+  type: string
+
+  @description('Scaler metadata')
+  metadata: object
+
+  @description('Optional secret-based auth mapping for trigger parameters')
+  auth: scaleRuleAuthConfig[]?
+}
+
+@description('Auth mapping for custom scale rule triggers')
+type scaleRuleAuthConfig = {
+  @description('Container App secret name used by the scaler')
+  secretRef: string
+
+  @description('Scaler trigger parameter name')
+  triggerParameter: string
 }
 
 @description('Environment variable definition')
@@ -212,6 +245,12 @@ resource apps 'Microsoft.App/containerApps@2026-01-01' = [
           maxReplicas: app.?maxReplicas ?? 3
           cooldownPeriod: 300
           pollingInterval: 30
+          rules: [
+            for rule in (app.?scaleRules ?? []): {
+              name: rule.name
+              custom: rule.custom
+            }
+          ]
         }
       }
     }

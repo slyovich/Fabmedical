@@ -281,6 +281,25 @@ module containerApps 'modules/container-apps.bicep' = {
         externalIngress: false
         minReplicas: 0
         maxReplicas: 3
+        scaleRules: [
+          {
+            name: 'servicebus-queue-50'
+            custom: {
+              type: 'azure-servicebus'
+              metadata: {
+                namespace: serviceBus.outputs.serviceBusNamespaceName
+                queueName: serviceBus.outputs.queueName
+                messageCount: '50'
+              }
+              auth: [
+                {
+                  secretRef: 'servicebus-connection-string'
+                  triggerParameter: 'connection'
+                }
+              ]
+            }
+          }
+        ]
         cpu: '0.25'
         memory: '0.5Gi'
         enableHttpProbes: false

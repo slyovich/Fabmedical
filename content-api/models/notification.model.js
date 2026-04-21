@@ -9,7 +9,7 @@ const NotificationSchema = new Schema({
         type: String
     },
     datetime: {
-        type: Date
+        type: String
     },
     publisher: {
         type: String
