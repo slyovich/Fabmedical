@@ -66,7 +66,40 @@ The Azure Function project is available in `content-function/` and listens to th
 Notes:
 
 - In this devcontainer, `SERVICEBUS_CONNECTION` is already provided by `.devcontainer/devcontainer.json`.
+- `MONGODB_CONNECTION` must point to a reachable MongoDB instance (default in this repo: `mongodb://mongo:27017/contentdb`).
 - `local.settings.json` can still be used for local overrides when needed.
+- The API publisher uses `SERVICEBUS_QUEUE_NAME` (default: `notifications`). Keep this value aligned with the Function trigger queue.
+
+### Validate end-to-end flow (API -> Service Bus -> Function -> MongoDB)
+
+1. Start the backend API:
+
+   npm --prefix content-api start
+
+2. Start the Azure Function host:
+
+   npm --prefix content-function start
+
+3. Publish a notification through the API (`POST /notifications`):
+
+   curl -X POST http://localhost:3001/notifications -H "Content-Type: application/json" -d '{
+   "message": "Hello World",
+   "datetime": "2026-04-21T07:00:00Z",
+   "publisher": "api-user",
+   "type": "notification"
+   }'
+
+4. Verify API response includes success and queue name:
+   - `status: Message published successfully`
+   - `queueName: notifications`
+
+5. Check Function logs for message processing:
+   - `Message received from queue notifications:`
+   - `Message stored in MongoDB collection notifications`
+
+6. Confirm persisted data through the API:
+
+   curl http://localhost:3001/notifications
 
 ### Run web app with Node (recommended for `/api/*` routes)
 
@@ -266,26 +299,32 @@ az deployment group create \
   --template-file infra/main.bicep \
   --parameters \
       webapiImageAndTag='<acrName>.azurecr.io/content/api:<tag>' \
-      webappImageAndTag='<acrName>.azurecr.io/content/web:<tag>'
+      webappImageAndTag='<acrName>.azurecr.io/content/web:<tag>' \
+      functionImageAndTag='<acrName>.azurecr.io/content/function:<tag>'
 ```
 
 This deploys the following resources:
 
-| Resource                  | Purpose                                                   |
-| ------------------------- | --------------------------------------------------------- |
-| Container App Environment | Shared hosting environment with Log Analytics integration |
-| `ca-content-api`          | Backend API container (internal ingress only)             |
-| `ca-content-web`          | Frontend web container (external ingress)                 |
-| Managed Identity          | Passwordless authentication to ACR and Key Vault          |
-| Cosmos DB (Mongo)         | Database backend                                          |
-| Key Vault                 | Secret management (MongoDB connection string)             |
-| Application Insights      | Distributed tracing and monitoring                        |
+| Resource                                      | Purpose                                                                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Azure Container Registry (ACR)                | Stores private container images for `content-api`, `content-web`, and `content-function`.              |
+| User-Assigned Managed Identity                | Used by Container Apps to authenticate to ACR and Key Vault without embedded credentials.              |
+| Log Analytics Workspace                       | Centralized logs for Container Apps and platform diagnostics.                                          |
+| Application Insights                          | End-to-end observability: traces, metrics, and dependency monitoring.                                  |
+| Cosmos DB (Mongo API)                         | Main application database (`contentdb`) for sessions, speakers, and notifications.                     |
+| Service Bus Namespace + `notifications` Queue | Asynchronous messaging backbone used by the API publisher and Azure Function consumer.                 |
+| Storage Account                               | Azure Functions runtime state and storage backing (`AzureWebJobsStorage`).                             |
+| Key Vault                                     | Stores and exposes runtime secrets (MongoDB connection, Service Bus connection, AzureWebJobsStorage).  |
+| Container App Environment                     | Shared runtime boundary for all apps with logging/monitoring integration.                              |
+| `ca-content-api` Container App                | Internal backend API, Dapr-enabled, reads/writes MongoDB and publishes notifications to Service Bus.   |
+| `ca-content-web` Container App                | External frontend web app, Dapr-enabled, invokes `ca-content-api` through local sidecar.               |
+| `ca-content-function` Container App           | Azure Functions host container; consumes Service Bus `notifications` and persists payloads to MongoDB. |
 
 ### New Container Image deployment
 
 #### Using Bicep Scripts
 
-To deploy a new container image, update the `webapiImageAndTag` and `webappImageAndTag` parameters in `infra/main.bicep` and redeploy the stack.
+To deploy new container images, update the `webapiImageAndTag`, `webappImageAndTag`, and `functionImageAndTag` parameters in `infra/main.bicep` and redeploy the stack.
 
 ```bash
 az deployment group create \
@@ -293,7 +332,8 @@ az deployment group create \
   --template-file infra/main.bicep \
   --parameters \
       webapiImageAndTag='<acrName>.azurecr.io/content/api:<tag>' \
-      webappImageAndTag='<acrName>.azurecr.io/content/web:<tag>'
+      webappImageAndTag='<acrName>.azurecr.io/content/web:<tag>' \
+      functionImageAndTag='<acrName>.azurecr.io/content/function:<tag>'
 ```
 
 #### Using AZ CLI
