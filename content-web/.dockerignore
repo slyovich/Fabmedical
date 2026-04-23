@@ -62,3 +62,10 @@ typings/
 # next.js build output
 .next
 
+# Local/generated artifacts not needed in image build context
+dist/
+.angular/
+.git/
+Dockerfile*
+*.bkp
+

@@ -1,23 +1,16 @@
-FROM node:alpine AS base
-RUN apk -U add curl
+FROM node:16-alpine
+
 WORKDIR /usr/src/app
-EXPOSE 3001
-
-FROM node:16 AS build
-WORKDIR /usr/src/app
-
-# Install app dependencies
-COPY package.json /usr/src/app/
-RUN npm install
-
-# Bundle app source
-COPY . /usr/src/app
-
-FROM base AS final
 
 ARG BUILD_VERSION
 ENV BUILD_VERSION=${BUILD_VERSION}
+ENV NODE_ENV=production
 
-WORKDIR /usr/src/app
-COPY --from=build /usr/src/app .
-CMD [ "npm", "start" ]
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY . .
+
+EXPOSE 3001
+
+CMD [ "node", "server.js" ]
