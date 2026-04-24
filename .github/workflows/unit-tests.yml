@@ -37,9 +37,23 @@ jobs:
       - name: Start Service Bus emulator stack
         run: docker compose -f unit-tests/docker-compose.test.yml up -d
 
+      - name: Wait for Service Bus emulator to be reachable
+        run: |
+          for i in {1..30}; do
+            if timeout 1 bash -c '</dev/tcp/localhost/5672' 2>/dev/null; then
+              echo "Service Bus emulator is reachable on localhost:5672"
+              exit 0
+            fi
+            echo "Waiting for emulator startup... ($i/30)"
+            sleep 2
+          done
+          echo "Service Bus emulator did not become reachable in time"
+          docker compose -f unit-tests/docker-compose.test.yml logs servicebus-emulator
+          exit 1
+
       - name: Run integration tests against Service Bus emulator
         env:
-          SERVICEBUS_CONNECTION: Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+          SERVICEBUS_CONNECTION: Endpoint=sb://localhost/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
         run: npm run test:ci --prefix unit-tests
 
       - name: Stop emulator containers
