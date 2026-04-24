@@ -18,6 +18,45 @@
               "RequiresSession": false
             }
           }
+        ],
+        "Topics": [
+          {
+            "Name": "notificationpublisher",
+            "Properties": {
+              "DefaultMessageTimeToLive": "PT1H",
+              "DuplicateDetectionHistoryTimeWindow": "PT20S",
+              "EnableBatchedOperations": true,
+              "MaxSizeInMegabytes": 1024,
+              "RequiresDuplicateDetection": false,
+              "SupportOrdering": false
+            },
+            "Subscriptions": [
+              {
+                "Name": "consumer1",
+                "Properties": {
+                  "DeadLetteringOnFilterEvaluationExceptions": false,
+                  "DeadLetteringOnMessageExpiration": false,
+                  "DefaultMessageTimeToLive": "PT1H",
+                  "ForwardDeadLetteredMessagesTo": "",
+                  "ForwardTo": "",
+                  "LockDuration": "PT1M",
+                  "MaxDeliveryCount": 3,
+                  "RequiresSession": false
+                },
+                "Rules": [
+                  {
+                    "Name": "errors-only",
+                    "Properties": {
+                      "FilterType": "Sql",
+                      "SqlFilter": {
+                        "SqlExpression": "label = 'error'"
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
         ]
       }
     ],
