@@ -39,7 +39,7 @@ jobs:
 
       - name: Run integration tests against Service Bus emulator
         env:
-          SERVICEBUS_CONNECTION: Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
+          SERVICEBUS_CONNECTION: Endpoint=sb://servicebus-emulator;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
         run: npm run test:ci --prefix unit-tests
 
       - name: Stop emulator containers
