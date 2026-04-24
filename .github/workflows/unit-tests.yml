@@ -19,6 +19,8 @@ jobs:
   servicebus-sql-filter-tests:
     name: Service Bus SqlFilter Tests
     runs-on: ubuntu-latest
+    env:
+      SERVICEBUS_CONNECTION: Endpoint=sb://localhost:5672/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
 
     steps:
       - name: Checkout repository
@@ -51,10 +53,61 @@ jobs:
           docker compose -f unit-tests/docker-compose.test.yml logs servicebus-emulator
           exit 1
 
+      - name: Wait for Service Bus emulator AMQP readiness
+        run: |
+          node <<'NODE'
+          const { ServiceBusClient } = require('./unit-tests/node_modules/@azure/service-bus');
+
+          async function wait(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+          }
+
+          async function probe() {
+            let client;
+            let receiver;
+
+            try {
+              client = new ServiceBusClient(process.env.SERVICEBUS_CONNECTION);
+              receiver = client.createReceiver('notificationpublisher', 'consumer1');
+              await receiver.receiveMessages(1, { maxWaitTimeInMs: 500 });
+            } finally {
+              if (receiver) {
+                await receiver.close().catch(() => {});
+              }
+              if (client) {
+                await client.close().catch(() => {});
+              }
+            }
+          }
+
+          async function main() {
+            for (let i = 1; i <= 30; i += 1) {
+              try {
+                await probe();
+                console.log('Service Bus emulator AMQP is ready');
+                return;
+              } catch (error) {
+                const reason = error?.code || error?.name || error?.message || 'unknown error';
+                console.log(`AMQP not ready yet (${i}/30): ${reason}`);
+                await wait(2000);
+              }
+            }
+
+            throw new Error('Service Bus emulator AMQP readiness timed out');
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
+
       - name: Run integration tests against Service Bus emulator
-        env:
-          SERVICEBUS_CONNECTION: Endpoint=sb://localhost/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;
         run: npm run test:ci --prefix unit-tests
+
+      - name: Dump emulator logs on failure
+        if: failure()
+        run: docker compose -f unit-tests/docker-compose.test.yml logs servicebus-emulator sqledge
 
       - name: Stop emulator containers
         if: always()

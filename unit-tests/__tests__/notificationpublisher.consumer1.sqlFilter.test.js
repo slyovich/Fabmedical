@@ -6,6 +6,24 @@ describe('notificationpublisher -> consumer1 sqlFilter', () => {
   let topicSender;
   let subscriptionReceiver;
 
+  async function withRetry(action, attempts = 8, delayMs = 2000) {
+    let lastError;
+
+    for (let i = 1; i <= attempts; i += 1) {
+      try {
+        return await action();
+      } catch (error) {
+        lastError = error;
+        if (i === attempts) {
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+
+    throw lastError;
+  }
+
   async function drainSubscription() {
     while (true) {
       const received = await subscriptionReceiver.receiveMessages(50, { maxWaitTimeInMs: 1500 });
@@ -22,11 +40,23 @@ describe('notificationpublisher -> consumer1 sqlFilter', () => {
   beforeAll(async () => {
     connectionString = process.env.SERVICEBUS_CONNECTION;
 
-    serviceBusClient = new ServiceBusClient(connectionString);
-    topicSender = serviceBusClient.createSender('notificationpublisher');
-    subscriptionReceiver = serviceBusClient.createReceiver('notificationpublisher', 'consumer1');
+    await withRetry(async () => {
+      if (subscriptionReceiver) {
+        await subscriptionReceiver.close();
+      }
+      if (topicSender) {
+        await topicSender.close();
+      }
+      if (serviceBusClient) {
+        await serviceBusClient.close();
+      }
 
-    await drainSubscription();
+      serviceBusClient = new ServiceBusClient(connectionString);
+      topicSender = serviceBusClient.createSender('notificationpublisher');
+      subscriptionReceiver = serviceBusClient.createReceiver('notificationpublisher', 'consumer1');
+
+      await drainSubscription();
+    });
   });
 
   afterAll(async () => {
